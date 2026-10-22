@@ -1,0 +1,69 @@
+<!doctype html><meta charset="utf-8"><title>PHANTOM — motion review</title>
+<style>body{margin:0;background:#111;color:#fff;font:14px system-ui}header{padding:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}button,input{padding:7px}iframe{display:block;border:0;width:100%;height:calc(100vh - 105px)}output{white-space:pre-wrap;display:block;padding:8px}input[type=range]{width:220px}</style>
+<header><button id="play">Play sequence</button><button data-time="0">Yesterday</button><button data-time="1000">Changing day</button><button data-time="1500">Today settled</button><button data-time="1810">Knife in flight</button><button data-time="1860">Impact</button><button data-time="2400">Final</button><input id="seek" aria-label="Timeline" type="range" min="0" max="3000" value="0"><button id="test">Run checks</button><button id="narrow">390 px</button><button id="wide">Full width</button></header>
+<iframe id="scene" title="Calendar preview"></iframe><output id="results">Loading…</output>
+<script>
+const scene=document.querySelector('#scene'), results=document.querySelector('#results');
+const pause=ms=>new Promise(r=>setTimeout(r,ms));
+const doc=()=>scene.contentDocument, win=()=>scene.contentWindow;
+function seek(time){for(const a of doc().getElementById('dailyIntro').getAnimations({subtree:true})){a.pause();a.currentTime=time;}document.querySelector('#seek').value=time;results.textContent=`Frame: ${time} ms`;}
+async function replay(){win().PhantomReplayIntro();await pause(50);}
+async function setup(){
+ let html=await (await fetch('../index.html',{cache:'no-store'})).text();
+ html=html.replace(/href="(.+?\.css)(?:\?[^"]*)?"/g,(_,url)=>`href="${url}?review=${Date.now()}"`);
+ const boot=`<base href="${new URL('../',location.href)}"><script>
+ window.reviewNow='2026-10-23T12:00:00'; const NativeDate=Date;
+ window.Date=class extends NativeDate{constructor(...args){super(...(args.length?args:[window.reviewNow]));}static now(){return new NativeDate(window.reviewNow).getTime();}};
+ const memory=new Map([['phantom-hub-note-v1','KEEP MY NOTE']]); Object.defineProperty(window,'localStorage',{value:{getItem:k=>memory.get(k)??null,setItem:(k,v)=>memory.set(k,String(v))}});
+ const originalMatchMedia=window.matchMedia.bind(window);window.reviewReduced=false;window.matchMedia=q=>q.includes('prefers-reduced-motion')?{matches:window.reviewReduced,addEventListener(){},removeEventListener(){}}:originalMatchMedia(q);
+ <\/script>`;
+ // srcdoc uses isolated in-memory storage; no changes to real user data.
+ html=html.replace('<head>','<head>'+boot);
+ for(const name of ['phantom-v4','phantom-daily']){
+   const source=(await (await fetch(`../assets/${name}.js`,{cache:'no-store'})).text()).replaceAll('location.search',"'?intro=preview'");
+   html=html.replace(new RegExp(`<script src="./assets/${name}\\.js(?:\\?[^"]*)?"><\\/script>`),`<script>${source}<\/script>`);
+ }
+ scene.srcdoc=html;
+ await new Promise(r=>scene.onload=r);
+ // Disable only OS motion media rules in this test document, never in the app.
+ for(const sheet of doc().styleSheets){try{for(let i=sheet.cssRules.length-1;i>=0;i--){if(sheet.cssRules[i].conditionText?.includes('prefers-reduced-motion'))sheet.deleteRule(i);}}catch{}}
+ await replay();seek(0);
+}
+function largestDate(){return [...doc().querySelectorAll('.daily-card')].sort((a,b)=>b.getBoundingClientRect().height-a.getBoundingClientRect().height)[0]?.querySelector('.day-number').textContent;}
+const opacity=selector=>Number(win().getComputedStyle(doc().querySelector(selector)).opacity);
+document.querySelectorAll('[data-time]').forEach(b=>b.onclick=()=>seek(Number(b.dataset.time)));
+document.querySelector('#seek').oninput=e=>seek(Number(e.target.value));
+document.querySelector('#play').onclick=async()=>{await replay();results.textContent='Playing';};
+document.querySelector('#narrow').onclick=()=>scene.style.width='390px';
+document.querySelector('#wide').onclick=()=>scene.style.width='100%';
+document.querySelector('#test').onclick=async()=>{
+ const checks=[];function check(ok,label){checks.push(`${ok?'PASS':'FAIL'} ${label}`);}
+ win().reviewNow='2026-10-23T12:00:00';await replay();seek(0);
+ check(largestDate()==='22','Yesterday is largest before the day changes');
+ check(opacity('.daily-strike')===0,'Knife hidden at start');
+ seek(1500);check(largestDate()==='23','Today takes the central position');
+ check(opacity('.daily-strike')===0,'Knife waits until date has settled');
+ seek(2400);check(opacity('.daily-strike')===1,'Knife visible after impact');
+ win().reviewNow='2027-01-01T00:01:00';await replay();seek(2400);
+ const dates=[...doc().querySelectorAll('.daily-card:not(.is-outgoing) .day-number')].map(e=>e.textContent);
+ check(JSON.stringify(dates)===JSON.stringify(['30','31','1','2','3']),'Replay recomputes dates across New Year');
+ check(doc().querySelector('#dailyYear').textContent.includes('2027'),'Year updates on replay');
+ doc().querySelector('#dailySkip').click();await pause(700);
+ check(doc().querySelector('#dailyIntro').hidden,'Skip dismisses the dialog');
+ check(!!doc().querySelector('#hubReplay'),'Skip opens Daily Hub');
+ check(doc().querySelector('#hubNote')?.value==='KEEP MY NOTE','Existing note preserved');
+ check(win().localStorage.getItem('phantom-intro-last-date-v1')==='2027-01-01','Once-per-day marker uses the displayed day');
+ win().PhantomReplayIntro();doc().querySelector('#dailySkip').click();win().PhantomReplayIntro();await pause(700);
+ check(!doc().querySelector('#dailyIntro').hidden,'Replay cancels a pending close');
+ win().reviewReduced=true;await replay();
+ seek(0);
+ check(doc().querySelector('#dailyIntro').getAnimations({subtree:true}).length>0,'Intro always animates, including with OS reduced motion');
+ check(largestDate()==='31','Always-on intro still starts with yesterday');
+ check(Number(win().getComputedStyle(doc().querySelector('.daily-strike')).zIndex)>Number(win().getComputedStyle(doc().querySelector('.is-current .day-number')).zIndex),'Knife is in front of the numeral');
+ win().reviewReduced=false;win().reviewNow='2028-03-01T12:00:00';await replay();seek(2400);
+ check(JSON.stringify([...doc().querySelectorAll('.daily-card:not(.is-outgoing) .day-number')].map(e=>e.textContent))===JSON.stringify(['28','29','1','2','3']),'Leap-day rollover is correct');
+ win().reviewReduced=false;win().reviewNow='2026-10-23T12:00:00';await replay();seek(2400);
+ results.textContent=checks.join('\n');
+};
+setup();
+</script>

@@ -1,0 +1,157 @@
+<!doctype html><meta charset="utf-8"><title>PHANTOM — menu review</title>
+<style>body{margin:0;background:#202020;color:white;font:13px system-ui}header{display:flex;gap:10px;padding:10px;align-items:center;flex-wrap:wrap}button{padding:8px}iframe{border:0;display:block;width:1280px;height:720px;max-width:100%}output{display:block;white-space:pre-wrap;padding:15px}</style>
+<header><button id="run">Run menu checks</button><button id="profile">Profile transitions</button><button id="phone">390 px</button><button id="desktop">1280 px</button><button id="large">1600 px</button><button id="wide">1920 px scaled</button><span>Isolated test storage · no changes to user data</span></header>
+<iframe id="scene" title="Main menu preview"></iframe><output id="results">Loading…</output>
+<script>
+const scene=document.getElementById('scene'),results=document.getElementById('results');
+const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+const doc=()=>scene.contentDocument,win=()=>scene.contentWindow;
+let initialPortraitRequests=0;
+async function setup(){
+ let html=await(await fetch('../index.html',{cache:'no-store'})).text();
+ html=html.replace(/href="(.+?\.css)(?:\?[^"]*)?"/g,(_,url)=>`href="${url}?review=${Date.now()}"`);
+ const boot=`<base href="${new URL('../',location.href)}"><script>
+ const memory=new Map([['phantom-hub-note-v1','KEEP MY NOTE']]);
+ const now=new Date();memory.set('phantom-intro-last-date-v1',[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-'));
+ Object.defineProperty(window,'localStorage',{value:{getItem:k=>memory.get(k)??null,setItem:(k,v)=>memory.set(k,String(v))}});
+ window.fetch=async()=>({ok:true,json:async()=>({current:{temperature_2m:18,weather_code:0,apparent_temperature:17}})});
+ window.reviewErrors=[];window.addEventListener('error',e=>window.reviewErrors.push(e.message));
+ <\/script>`;
+ html=html.replace('<head>','<head>'+boot);
+ for(const name of ['phantom-v4','phantom-daily']){
+  let source=await(await fetch(`../assets/${name}.js`,{cache:'no-store'})).text();
+  // Capture navigation only inside this disposable fixture; production opens the URL.
+  if(name==='phantom-v4')source=source.replace('location.href=destination','window.reviewNavigation=destination');
+  html=html.replace(new RegExp(`<script src="./assets/${name}\\.js(?:\\?[^"]*)?"><\\/script>`),`<script>${source}<\/script>`);
+ }
+ const loaded=new Promise(resolve=>scene.onload=resolve);scene.srcdoc=html;await loaded;await pause(850);
+ initialPortraitRequests=doc().querySelectorAll('.cast-portrait[src]').length;
+ results.textContent='Ready';
+}
+const pick=id=>doc().querySelector(`[data-scene="${id}"]`).click();
+const key=(element,name,extra={})=>element.dispatchEvent(new (win().KeyboardEvent)('keydown',{key:name,bubbles:true,cancelable:true,...extra}));
+function viewport(width,height,scale=1){scene.style.width=width+'px';scene.style.height=height+'px';scene.style.maxWidth='none';scene.style.transform=`scale(${scale})`;scene.style.transformOrigin='top left';}
+document.getElementById('phone').onclick=()=>viewport(390,1100);
+document.getElementById('desktop').onclick=()=>viewport(1280,720);
+document.getElementById('large').onclick=()=>viewport(1600,900,.75);
+document.getElementById('wide').onclick=()=>viewport(1920,1080,.62);
+document.getElementById('run').onclick=async()=>{
+ viewport(1280,720);
+ const checks=[];const check=(ok,label)=>checks.push(`${ok?'PASS':'FAIL'} ${label}`);
+ try{
+ pick('search');check(doc().querySelectorAll('.game-option').length===7,'Seven working command sections');
+ check(initialPortraitRequests===1,'Only the initial portrait is requested on startup');
+ check(!doc().querySelector('.game-brand')&&doc().getElementById('gameClock').getBoundingClientRect().left<scene.clientWidth/3,'Clock replaces the logo in the left corner');
+ check(/^\d{2}:\d{2}$/.test(doc().getElementById('gameClock').getAttribute('datetime')),'Cut-letter clock exposes a valid time');
+ check(doc().querySelectorAll('.calling-sheet:not(.sheet-exit) .game-link').length===0,'Dedicated Search has no quick links');
+ check(doc().querySelector('.menu-character img[data-character="joker"]').naturalWidth>0,'Character asset loaded');
+ const input=doc().getElementById('gameSearchInput');input.value='persona 5 меню';
+ doc().getElementById('gameSearchForm').dispatchEvent(new (win().Event)('submit',{bubbles:true,cancelable:true}));
+ check(win().reviewNavigation==='https://www.google.com/search?q='+encodeURIComponent('persona 5 меню'),'Search correctly encodes Cyrillic query');
+ input.value='example.com/path?q=1';doc().getElementById('gameSearchForm').dispatchEvent(new (win().Event)('submit',{bubbles:true,cancelable:true}));
+ check(win().reviewNavigation==='https://example.com/path?q=1','Bare domain opens with HTTPS');
+ input.value='javascript:alert(1)';doc().getElementById('gameSearchForm').dispatchEvent(new (win().Event)('submit',{bubbles:true,cancelable:true}));
+ check(win().reviewNavigation.startsWith('https://www.google.com/search?'),'Executable scheme is treated as search text');
+ input.value='example.com';input.dispatchEvent(new (win().Event)('input',{bubbles:true}));
+ check(doc().getElementById('searchDestination').textContent==='ОТКРЫТЬ САЙТ','Search ticket recognizes a website address');
+ input.value='keep draft';pick('links');
+ check(!doc().getElementById('gameSearchInput'),'Favorites has no duplicate search field');
+ check(doc().querySelectorAll('.calling-sheet:not(.sheet-exit) .game-link').length===6&&doc().querySelectorAll('.calling-sheet:not(.sheet-exit) .link-host').length===6,'Favorites renders six destination cards with hostnames');
+ pick('search');check(doc().getElementById('gameSearchInput').value==='keep draft','Search draft survives section changes');pick('links');
+ const github=doc().querySelector('.game-link[href="https://github.com/"]');github.focus();key(github,'ArrowDown');
+ check(doc().getElementById('gameShell').dataset.scene==='links','Arrow keys on links do not unexpectedly change section');
+ pick('dev');check(doc().querySelectorAll('.calling-sheet:not(.sheet-exit) .game-link').length===2,'Develop filters GitHub and Kaggle');
+ pick('study');check(doc().querySelector('.game-link').textContent.includes('ALMAU'),'Study includes ALMAU');
+ pick('media');check(doc().querySelectorAll('.calling-sheet:not(.sheet-exit) .game-link').length===2,'Media includes YouTube and Reddit');
+ pick('hub');await pause(50);check(doc().getElementById('hubNote').value==='KEEP MY NOTE','Existing note preserved');
+ const note=doc().getElementById('hubNote');note.value='Saved test note';note.dispatchEvent(new (win().Event)('input',{bubbles:true}));pick('links');pick('hub');
+ check(doc().getElementById('hubNote').value==='Saved test note','Notes persist after navigation');
+ doc().getElementById('hubNote').focus();key(doc().getElementById('hubNote'),'ArrowDown');
+ check(doc().getElementById('gameShell').dataset.scene==='hub','Note arrow keys retain editing behavior');
+ key(doc().getElementById('hubNote'),'Escape');check(doc().activeElement.dataset.scene==='hub','Escape returns focus from editor to active command');
+ key(doc().activeElement,'ArrowUp');check(doc().activeElement.dataset.scene==='media','Menu arrows change section and focus');
+ key(doc().activeElement,'/');check(doc().activeElement.id==='gameSearchInput','Slash focuses search from another section');
+ pick('settings');doc().querySelector('[data-edit]').click();
+ check(!doc().getElementById('modal').hidden&&doc().getElementById('gameShell').inert,'Link editor opens with background inert');
+ const name=doc().querySelector('#settingsList input');name.value='MY CHATGPT';name.dispatchEvent(new (win().Event)('change',{bubbles:true}));
+ doc().getElementById('close').click();pick('links');check(doc().querySelector('.game-link').textContent.includes('MY CHATGPT'),'Edited destination updates and persists');
+ pick('settings');doc().querySelector('[data-edit]').click();key(doc().activeElement,'Escape');
+ check(doc().getElementById('modal').hidden&&!doc().getElementById('gameShell').inert,'Escape closes settings and restores interaction');
+ pick('search');doc().getElementById('gameSearchInput').value='';
+ await pause(400);
+ for(const width of [390,768,1280]){
+  scene.style.width=width+'px';scene.style.height=(width<980?1100:720)+'px';await pause(50);
+  check(doc().documentElement.scrollWidth<=doc().documentElement.clientWidth+1,`${width}px Search has no horizontal overflow`);
+  pick('links');await pause(450);
+  check(doc().documentElement.scrollWidth<=doc().documentElement.clientWidth+1,`${width}px Favorites has no horizontal overflow`);
+  if(width===1280)check(doc().documentElement.scrollHeight<=722,'Favorites fits a 720px-high viewport');
+  pick('search');await pause(450);
+ }
+ check(doc().documentElement.scrollHeight<=722,'Desktop composition fits a 720px-high viewport');
+ pick('search');await pause(1250);
+ const character=doc().querySelector('.menu-character'),commands=doc().querySelector('.game-left');
+ const oldCharacter=win().getComputedStyle(character).transform,oldCommands=win().getComputedStyle(commands).transform;
+ pick('media');await pause(80);
+ check(win().getComputedStyle(character).transform!==oldCharacter,'Character group moves during section selection');
+ check(win().getComputedStyle(commands).transform!==oldCommands,'Command group moves with the selection');
+ check(character.getAnimations().some(a=>a.playState==='running'),'Character transition is visible rather than instantaneous');
+ const interrupted=win().getComputedStyle(character).transform;pick('links');
+ check(win().getComputedStyle(character).transform===interrupted,'Interrupted transition continues from its visible frame');
+ for(const id of ['hub','media','study','settings','search','dev'])pick(id);
+ check(doc().getElementById('gameShell').dataset.scene==='dev'&&doc().querySelector('.game-links'),'Rapid selection immediately opens the latest section');
+ await pause(1250);
+ check(!character.getAnimations().some(a=>a.playState==='running')&&!commands.getAnimations().some(a=>a.playState==='running'),'Motion settles after rapid selections');
+ check(doc().getElementById('gameShell').dataset.character==='futaba','Latest rapid selection wins character loading');
+ const cast={search:'joker',links:'ann',dev:'futaba',study:'makoto',media:'ryuji',hub:'akechi',settings:'yusuke'};
+ for(const [section,expected] of Object.entries(cast)){
+  pick(section);await pause(1250);
+  const visible=[...doc().querySelectorAll('.cast-portrait')].filter(image=>!image.hidden);
+  check(visible.length===1&&visible[0].dataset.character===expected&&visible[0].naturalWidth>0,`${section} shows only ${expected}, with a loaded image`);
+ }
+ pick('links');await pause(70);pick('hub');await pause(45);pick('study');await pause(1250);
+ check(doc().getElementById('gameShell').dataset.character==='makoto'&&doc().querySelectorAll('.cast-portrait:not([hidden])').length===1,'Interrupted character exits leave no lingering portraits');
+ check(doc().getElementById('gameShell').scrollTop===0,'Transitions do not scroll the scene');
+ pick('search');await pause(1250);
+ check(doc().querySelectorAll('.calling-sheet:not(.sheet-exit)').length===1&&doc().querySelectorAll('.sheet-exit').length===0,'Paper transitions leave exactly one current sheet');
+ check(doc().querySelectorAll('.sheet-pin').length===1&&doc().querySelector('.sheet-pin img').naturalWidth>0,'One loaded dagger pins the sheet');
+ check(Number(win().getComputedStyle(doc().querySelector('.sheet-pin')).zIndex)>2,'Dagger stays above incoming and outgoing paper');
+ pick('links');
+ const pin=doc().querySelector('.sheet-pin'),blade=pin.querySelector('img'),puncture=pin.querySelector('.sheet-puncture');
+ const sheet=doc().querySelector('.calling-sheet:not(.sheet-exit)'),flight=blade.getAnimations()[0],paperMotion=sheet.getAnimations()[0];
+ const motion=[paperMotion,...pin.getAnimations(),...blade.getAnimations(),...puncture.getAnimations()];
+ motion.forEach(animation=>{animation.pause();animation.currentTime=0;});
+ check(win().getComputedStyle(blade).opacity==='0'&&win().getComputedStyle(puncture).opacity==='0','Knife and puncture are hidden before flight');
+ const timing=flight.effect.getTiming(),paperFrames=paperMotion.effect.getKeyframes();
+ check(paperFrames[0].transform.includes('translateY(-260px)')&&flight.effect.getKeyframes()[0].transform.includes('translateY(-340px)'),'Paper and knife both fall from above');
+ check(Math.abs(timing.delay+timing.duration-paperFrames[2].offset*paperMotion.effect.getTiming().duration)<1,'Knife catches the falling paper on the same frame');
+ check(Math.abs(parseFloat(win().getComputedStyle(pin).left)+pin.offsetWidth*.14-doc().getElementById('gameDetail').clientWidth/2)<1,'Knife tip is anchored at the top center of the note');
+ motion.forEach(animation=>animation.currentTime=timing.delay+timing.duration/2);
+ const inFlight=win().getComputedStyle(blade).transform;
+ check(Number(win().getComputedStyle(blade).opacity)>.5&&win().getComputedStyle(puncture).opacity==='0','Knife flies visibly before the puncture appears');
+ motion.forEach(animation=>animation.currentTime=timing.delay+timing.duration+2);
+ check(win().getComputedStyle(blade).transform!==inFlight&&win().getComputedStyle(puncture).opacity==='1','Knife lands and creates its puncture');
+ motion.forEach(animation=>animation.finish());
+ pick('search');await pause(1250);
+ check(doc().querySelector('.sheet-pin').classList.contains('is-pinned')&&doc().querySelector('.sheet-pin img').getAnimations().length===0,'Pin is committed and finished flight effects are released');
+ check(doc().getAnimations().length===0,'No animations remain allocated while the menu is idle');
+ check(win().reviewErrors.length===0,'No JavaScript errors');
+ }catch(error){checks.push('FAIL '+error.stack);}
+ results.textContent=checks.join('\n');
+};
+setup();
+document.getElementById('profile').onclick=async()=>{
+ viewport(1280,720);await pause(1400);
+ const costs=[],frames=[];let peakAnimations=0,peakPortraits=0,previous=0,running=true;
+ function sample(now){
+  if(previous)frames.push(now-previous);previous=now;
+  peakAnimations=Math.max(peakAnimations,doc().getAnimations().filter(a=>a.playState==='running').length);
+  peakPortraits=Math.max(peakPortraits,doc().querySelectorAll('.cast-portrait:not([hidden])').length);
+  if(running)win().requestAnimationFrame(sample);
+ }
+ win().requestAnimationFrame(sample);
+ for(let i=0;i<28;i++){const start=performance.now();pick(['links','dev','study','media','hub','settings','search'][i%7]);costs.push(performance.now()-start);await pause(90);}
+ await pause(1500);running=false;await pause(30);
+ costs.sort((a,b)=>a-b);frames.sort((a,b)=>a-b);
+ results.textContent=JSON.stringify({selections:costs.length,selectionMedianMs:+costs[Math.floor(costs.length*.5)].toFixed(2),selectionP95Ms:+costs[Math.floor(costs.length*.95)].toFixed(2),frameMedianMs:+frames[Math.floor(frames.length*.5)].toFixed(2),frameP95Ms:+frames[Math.floor(frames.length*.95)].toFixed(2),peakRunningAnimations:peakAnimations,peakVisiblePortraits:peakPortraits,idleAnimations:doc().getAnimations().length,remainingSheets:doc().querySelectorAll('.calling-sheet').length},null,2);
+};
+</script>

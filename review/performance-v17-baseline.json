@@ -1,0 +1,11 @@
+{
+  "selections": 28,
+  "selectionMedianMs": 6.6,
+  "selectionP95Ms": 25.9,
+  "frameMedianMs": 16.7,
+  "frameP95Ms": 16.8,
+  "peakRunningAnimations": 22,
+  "peakVisiblePortraits": 2,
+  "idleAnimations": 2,
+  "remainingSheets": 1
+}

@@ -1,0 +1,61 @@
+/* PHANTOM CUTOUT — collage typography based on Persona 5's ransom-note menu. */
+.game-top,.game-bottom{display:none!important}
+.game-layout{min-height:100vh;max-width:1600px;padding-top:clamp(42px,7vh,95px);padding-bottom:35px;align-items:center}
+.game-left{align-self:center}
+.game-overline{margin-left:13px;background:#d10111;color:#fefefe;transform:rotate(-4deg) skew(-8deg);box-shadow:5px 5px 0 #010103}
+.game-title{display:flex;flex-direction:column;align-items:flex-start;gap:0;margin:29px 0 37px 0;line-height:1;transform:none;text-shadow:none;letter-spacing:normal;font-size:inherit;overflow:visible;animation:collage-drop .65s ease-out both}
+.game-title .cut{position:relative;display:block;width:max-content;max-width:100%;height:auto;line-height:.95;box-shadow:7px 9px 0 #010103;white-space:nowrap;filter:drop-shadow(2px 3px 0 #010103)}
+.game-title .cut-one{font:900 clamp(68px,7.6vw,124px)/.93 Impact,Anton,sans-serif;letter-spacing:-.045em;transform:rotate(-6deg) translateX(10px);background:#fefefe;color:#010103;padding:2px 18px 7px 16px;clip-path:polygon(0 2%,98% 0,100% 92%,2% 100%);z-index:3}
+.game-title .cut-two{font:900 clamp(68px,7.5vw,120px)/.96 Georgia,serif;font-style:italic;letter-spacing:-.105em;transform:rotate(4deg) translate(33px,-6px);background:#d10111;color:#fefefe;padding:0 26px 9px 12px;clip-path:polygon(2% 0,100% 4%,96% 100%,0 92%);z-index:2;text-shadow:3px 3px 0 #010103}
+.game-title .cut-three{font:900 clamp(77px,8.4vw,137px)/.91 Impact,Anton,sans-serif;letter-spacing:-.035em;transform:rotate(-3deg) translate(0,-11px);background:#010103;color:#fefefe;padding:3px 30px 12px 14px;outline:0;clip-path:polygon(1% 0,100% 5%,97% 95%,0 100%);z-index:1;text-shadow:5px 3px 0 #d10111}
+.game-title .cut-stop{color:#d10111;font:inherit}
+.game-title .cut-two:before{content:'';position:absolute;bottom:2px;left:15px;width:77%;height:5px;background:#fefefe;transform:rotate(-2deg)}
+.game-title .cut-three:after{content:'✦';font:28px Georgia,serif;position:absolute;right:6px;top:1px;color:#d10111;transform:rotate(17deg)}
+.game-menu{margin-top:9px}
+.game-option{font-family:Georgia,'Times New Roman',serif;font-size:clamp(15px,1.45vw,20px);font-weight:900;letter-spacing:-.04em;text-shadow:2px 2px 0 #010103}
+.game-option:nth-child(even){font-family:Impact,Anton,sans-serif;letter-spacing:.02em}
+.game-option.active,.game-option:hover,.game-option:focus-visible{background:#d10111;transform:translateX(24px) skew(-5deg) rotate(-1deg)}
+.game-detail{background:#08080ce0}
+.game-detail h2{font-family:Impact,Anton,sans-serif;letter-spacing:-.025em;text-shadow:5px 5px #d10111}
+.game-detail-top span:last-child{background:#d10111}
+.game-controls{margin-top:27px}
+@keyframes collage-drop{from{opacity:0;translate:-30px 10px}to{opacity:1;translate:0 0}}
+@media(max-width:900px){.game-layout{padding-top:36px;align-items:stretch}.game-left{align-self:stretch}.game-title .cut-one{font-size:clamp(65px,13vw,116px)}.game-title .cut-two{font-size:clamp(65px,13vw,112px)}.game-title .cut-three{font-size:clamp(75px,14vw,126px)}}
+@media(max-width:510px){.game-layout{padding-top:28px}.game-title .cut-one{font-size:clamp(58px,17vw,85px)}.game-title .cut-two{font-size:clamp(57px,16vw,84px)}.game-title .cut-three{font-size:clamp(64px,18vw,94px)}.game-title .cut-two{transform:rotate(4deg) translate(14px,-5px)}.game-option{font-size:15px}}
+@media(prefers-reduced-motion:reduce){.game-title{animation:none}}
+
+/* Individual newspaper letters: restrained irregularity instead of full-word cards. */
+.news-letter{display:inline-block;position:relative;vertical-align:baseline;line-height:1;transform-origin:center 75%;text-shadow:none;white-space:pre;transition:transform .16s ease}
+.news-v0{font-family:Georgia,serif;font-weight:900;transform:rotate(-7deg) translateY(2px);letter-spacing:-.07em}
+.news-v1{font-family:Impact,Anton,sans-serif;font-weight:900;transform:rotate(4deg) scaleY(1.06);letter-spacing:-.03em}
+.news-v2{font-family:'Times New Roman',serif;font-style:italic;font-weight:900;transform:rotate(-3deg) translateY(-2px)}
+.news-v3{font-family:Arial Black,Impact,sans-serif;font-weight:900;transform:rotate(6deg) scale(.95,1.03)}
+.news-v4{font-family:Georgia,serif;font-weight:900;transform:rotate(-5deg) scale(1.06,.96)}
+.news-v5{font-family:Impact,Anton,sans-serif;font-weight:900;transform:rotate(2deg) translateY(2px)}
+.news-v6{font-family:Georgia,serif;font-style:italic;font-weight:900;transform:rotate(7deg) scale(.95)}
+.news-v7{font-family:'Arial Narrow',Impact,sans-serif;font-weight:900;transform:rotate(-4deg) scaleY(1.08)}
+.news-v8{font-family:'Times New Roman',serif;font-weight:900;transform:rotate(3deg) translateY(-2px)}
+
+/* The main headline uses paper scraps behind select letters, not whole words. */
+.game-title .cut{background:none;color:#fefefe;clip-path:none;filter:none;box-shadow:none;padding:0;display:flex;align-items:baseline;overflow:visible;letter-spacing:-.085em;text-shadow:none}
+.game-title .cut-one{transform:rotate(-4deg) translateX(12px);color:#fefefe}
+.game-title .cut-two{transform:rotate(3deg) translate(27px,-5px);color:#fefefe}
+.game-title .cut-three{transform:rotate(-3deg) translate(1px,-12px);color:#fefefe}
+.game-title .cut:before,.game-title .cut:after{display:none}
+.game-title .news-letter{padding:0 .012em .055em;background:#fefefe;color:#010103;box-shadow:3px 4px 0 #010103;clip-path:polygon(0 2%,99% 0,100% 94%,2% 100%)}
+.game-title .news-v1,.game-title .news-v4,.game-title .news-v7{background:#010103;color:#fefefe;border:2px solid #fefefe;box-shadow:3px 3px 0 #010103}
+.game-title .cut-two .news-v0,.game-title .cut-two .news-v3,.game-title .cut-two .news-v6,.game-title .cut-three .news-v2,.game-title .cut-three .news-v5{background:#d10111;color:#fefefe;border:0}
+.game-title .cut-stop{font-size:.7em;color:#d10111}
+.game-option .news-letter{margin-right:.012em}
+.game-option>.news-run{display:inline-flex;align-items:baseline;gap:0;margin-left:0;font-size:inherit;letter-spacing:-.055em;white-space:pre}
+.game-option .news-v2,.game-option .news-v6{background:#fefefe;color:#010103;padding:0 2px;transform:rotate(-5deg) translateY(1px)}
+.game-option .news-v4{background:#010103;color:#fefefe;padding:0 2px;transform:rotate(4deg)}
+.game-option.active .news-v2,.game-option.active .news-v6{background:#010103;color:#fefefe}
+.game-option.active .news-v4{background:#fefefe;color:#010103}
+.game-detail h2{line-height:1.07;letter-spacing:-.055em;text-shadow:none}
+.game-detail h2 .news-letter{margin-right:.005em}
+.game-detail h2 .news-v0,.game-detail h2 .news-v4{background:#fefefe;color:#010103;padding:0 2px}
+.game-detail h2 .news-v2,.game-detail h2 .news-v6{background:#d10111;color:#fefefe;padding:0 2px}
+.game-detail-top .news-letter{font-size:1em}
+.game-overline .news-letter{font-size:1em}
+@media(max-width:510px){.game-title .cut-two{transform:rotate(3deg) translate(12px,-5px)}.game-title .news-letter{box-shadow:2px 2px #010103}}

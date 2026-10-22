@@ -1,0 +1,62 @@
+PASS Seven working command sections
+PASS Only the initial portrait is requested on startup
+PASS Clock replaces the logo in the left corner
+PASS Cut-letter clock exposes a valid time
+PASS Dedicated Search has no quick links
+PASS Character asset loaded
+PASS Search correctly encodes Cyrillic query
+PASS Bare domain opens with HTTPS
+PASS Executable scheme is treated as search text
+PASS Search ticket recognizes a website address
+PASS Favorites has no duplicate search field
+PASS Favorites renders six destination cards with hostnames
+PASS Search draft survives section changes
+PASS Arrow keys on links do not unexpectedly change section
+PASS Develop filters GitHub and Kaggle
+PASS Study includes ALMAU
+PASS Media includes YouTube and Reddit
+PASS Existing note preserved
+PASS Notes persist after navigation
+PASS Note arrow keys retain editing behavior
+PASS Escape returns focus from editor to active command
+PASS Menu arrows change section and focus
+PASS Slash focuses search from another section
+PASS Link editor opens with background inert
+PASS Edited destination updates and persists
+PASS Escape closes settings and restores interaction
+PASS 390px Search has no horizontal overflow
+PASS 390px Favorites has no horizontal overflow
+PASS 768px Search has no horizontal overflow
+PASS 768px Favorites has no horizontal overflow
+PASS 1280px Search has no horizontal overflow
+PASS 1280px Favorites has no horizontal overflow
+PASS Favorites fits a 720px-high viewport
+PASS Desktop composition fits a 720px-high viewport
+PASS Character group moves during section selection
+PASS Command group moves with the selection
+PASS Character transition is visible rather than instantaneous
+PASS Interrupted transition continues from its visible frame
+PASS Rapid selection immediately opens the latest section
+PASS Motion settles after rapid selections
+PASS Latest rapid selection wins character loading
+PASS search shows only joker, with a loaded image
+PASS links shows only ann, with a loaded image
+PASS dev shows only futaba, with a loaded image
+PASS study shows only makoto, with a loaded image
+PASS media shows only ryuji, with a loaded image
+PASS hub shows only akechi, with a loaded image
+PASS settings shows only yusuke, with a loaded image
+PASS Interrupted character exits leave no lingering portraits
+PASS Transitions do not scroll the scene
+PASS Paper transitions leave exactly one current sheet
+PASS One loaded dagger pins the sheet
+PASS Dagger stays above incoming and outgoing paper
+PASS Knife and puncture are hidden before flight
+PASS Paper and knife both fall from above
+PASS Knife catches the falling paper on the same frame
+PASS Knife tip is anchored at the top center of the note
+PASS Knife flies visibly before the puncture appears
+PASS Knife lands and creates its puncture
+PASS Pin is committed and finished flight effects are released
+PASS No animations remain allocated while the menu is idle
+PASS No JavaScript errors

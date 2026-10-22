@@ -1,0 +1,26 @@
+# Local agent configuration and design notes
+.claude/
+.codex/
+.agents/
+.impeccable.md
+
+# Local backups and visual experiments
+index.old.html
+review/*
+!review/menu.html
+!review/motion.html
+!review/README.md
+!review/menu-v18.md
+!review/menu-v18-checks.txt
+!review/intro-v18-checks.txt
+!review/performance-v17-baseline.json
+!review/performance-v18.json
+!review/grey-background-applied.png
+
+# OS/editor artifacts and secrets
+.DS_Store
+Thumbs.db
+*.log
+.env
+.env.*
+!.env.example

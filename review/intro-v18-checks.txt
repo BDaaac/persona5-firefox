@@ -1,0 +1,16 @@
+PASS Yesterday is largest before the day changes
+PASS Knife hidden at start
+PASS Today takes the central position
+PASS Knife waits until date has settled
+PASS Knife visible after impact
+PASS Replay recomputes dates across New Year
+PASS Year updates on replay
+PASS Skip dismisses the dialog
+PASS Skip opens Daily Hub
+PASS Existing note preserved
+PASS Once-per-day marker uses the displayed day
+PASS Replay cancels a pending close
+PASS Intro always animates, including with OS reduced motion
+PASS Always-on intro still starts with yesterday
+PASS Knife is in front of the numeral
+PASS Leap-day rollover is correct

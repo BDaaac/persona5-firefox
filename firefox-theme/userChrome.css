@@ -1,0 +1,65 @@
+/* PHANTOM OS — Firefox toolbar theme
+   Designed to complement the locally installed Phantom Start page.
+   Keep the built-in Firefox Dark theme enabled.
+   No essential navigation controls are hidden.
+*/
+
+:root {
+  --phantom-ink: #010103;
+  --phantom-panel: #101014;
+  --phantom-red: #d10111;
+  --phantom-white: #fefefe;
+  --lwt-accent-color: var(--phantom-ink) !important;
+  --lwt-text-color: var(--phantom-white) !important;
+  --toolbar-bgcolor: var(--phantom-ink) !important;
+  --toolbar-color: var(--phantom-white) !important;
+  --lwt-toolbar-field-background-color: var(--phantom-panel) !important;
+  --lwt-toolbar-field-color: var(--phantom-white) !important;
+}
+
+#navigator-toolbox,
+#TabsToolbar,
+#nav-bar,
+#PersonalToolbar {
+  background-color: var(--phantom-ink) !important;
+  color: var(--phantom-white) !important;
+}
+
+#nav-bar { border-bottom: 3px solid var(--phantom-red) !important; }
+
+.tabbrowser-tab .tab-background {
+  border-radius: 0 !important;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%) !important;
+  background: #1b1b20 !important;
+  margin-block: 3px !important;
+}
+
+.tabbrowser-tab[selected] .tab-background {
+  background: var(--phantom-red) !important;
+  box-shadow: none !important;
+}
+
+.tabbrowser-tab[selected] .tab-label {
+  font-weight: 800 !important;
+  color: #fff !important;
+}
+
+.tabbrowser-tab:not([selected]):hover .tab-background {
+  background: #53040b !important;
+}
+
+#urlbar-background {
+  background: var(--phantom-panel) !important;
+  border: 1px solid #56565a !important;
+  border-radius: 3px !important;
+}
+
+#urlbar[focused] #urlbar-background {
+  border-color: var(--phantom-red) !important;
+  box-shadow: 0 0 0 1px var(--phantom-red) !important;
+}
+
+#nav-bar toolbarbutton:hover {
+  background-color: #d101112e !important;
+  border-radius: 3px !important;
+}
