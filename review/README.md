@@ -11,7 +11,7 @@ one additional old date exits off the left edge during the change.
 - 1400–1650 ms: today is stationary. No knife.
 - 1650–1850 ms: knife enters from the upper right.
 - 1850 ms: contact, numeral recoil and small impact accent begin together.
-- 2100 ms: settled hold. At 3900 ms, exit starts; Daily Hub opens after 280 ms.
+- 2100 ms: settled hold. At 3900 ms, exit starts; Search / Joker opens after 280 ms, with the search input focused.
 
 Quick fix v9.2: at the user's explicit request the intro always animates,
 including when the OS requests reduced motion. The INTRO MOTION switch was

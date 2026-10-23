@@ -242,7 +242,7 @@
     if(focusMenu)options[selected].focus({preventScroll:true});
   }
   function enter(){clearTimeout(entranceTimer);shell.classList.remove('is-entering');void shell.offsetWidth;shell.classList.add('is-entering');entranceTimer=setTimeout(()=>shell.classList.remove('is-entering'),800);}
-  window.PhantomSelectHub=()=>{select(5,{motion:false});enter();};
+  window.PhantomSelectStart=()=>{select(0,{motion:false});enter();};
   options.forEach((button,i)=>{
     button.addEventListener('click',()=>select(i));
     button.addEventListener('pointerenter',()=>loadPortrait(i),{once:true});
