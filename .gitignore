@@ -27,3 +27,7 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+
+# Generated Firefox installation packages
+dist/
+__pycache__/
