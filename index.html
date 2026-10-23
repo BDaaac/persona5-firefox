@@ -9,7 +9,7 @@
 </style>
 <link rel="stylesheet" href="./assets/phantom-daily.css?v=9.3">
 <link rel="stylesheet" href="./assets/phantom-menu.css?v=15.0">
-<link rel="stylesheet" href="./assets/phantom-paper.css?v=24.0">
+<link rel="stylesheet" href="./assets/phantom-paper.css?v=24.1">
 </head>
 <body><div class="stage"><div class="art"></div><div class="slash one"></div><div class="slash two"></div><div class="grain"></div><div class="wrap">
  <header class="top"><div class="brand">PHANTOM<span> / </span>START</div><div class="topright"><span class="date" id="date"></span><button class="config" id="settings">⚙ CUSTOMIZE</button></div></header>
@@ -18,7 +18,7 @@
  <aside class="command-menu" aria-label="Quick commands"><div class="command-heading">SELECT YOUR MISSION</div><button class="command selected" data-mode="all"><b>01</b><span>ALL LINKS</span></button><button class="command" data-mode="dev"><b>02</b><span>DEVELOP</span></button><button class="command" data-mode="work"><b>03</b><span>WORK / STUDY</span></button><button class="command" data-mode="media"><b>04</b><span>MEDIA</span></button><button class="command" data-mode="custom"><b>05</b><span>EDIT HIDEOUT</span></button><div class="command-foot">▲ SELECT · CLICK TO CONFIRM</div></aside>
  <footer class="below"><div><div class="footer-head"><h2 class="section-title">YOUR <b>HIDEOUTS</b></h2><span id="activeFilter">ALL DESTINATIONS</span></div><nav class="links" id="links" aria-label="Quick links"></nav></div><div class="footer">NO MORE <i>MASKS.</i> // 2026</div></footer>
  </div></div>
- <div class="modal" id="modal" hidden><div class="panel" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><h2 id="modalTitle">CUSTOMIZE YOUR HIDEOUT</h2><p>Edit names and addresses. Your settings are saved in this browser.</p><div class="settings-list" id="settingsList"></div><form class="add-row" id="addForm"><input id="newName" placeholder="Name" maxlength="32" required><input id="newUrl" placeholder="https://example.com" required><button type="submit">+ ADD</button></form><div class="actions"><button class="secondary" id="reset" type="button">RESET</button><button id="close" type="button">DONE ✓</button></div><p class="hint">Search uses Google. Use HTTPS links to sites you trust. Press Esc to close settings.</p></div></div>
+ <div class="modal" id="modal" hidden><div class="panel" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="editorDescription"><h2 id="modalTitle">ALL DESTINATIONS</h2><p id="editorDescription">Edit saved sites and choose their sections.</p><div class="settings-list" id="settingsList"></div><form class="add-row" id="addForm"><input id="newName" aria-label="New destination name" placeholder="Name" maxlength="32" required><input id="newUrl" aria-label="New destination URL" placeholder="https://example.com" required><select id="newSection" aria-label="New destination section"><option value="links">Favorites only</option><option value="dev">Develop</option><option value="study">Study</option><option value="media">Media</option></select><button type="submit">+ ADD</button></form><div class="actions"><button class="secondary" id="reset" type="button">RESET ALL</button><button id="close" type="button">DONE ✓</button></div><p class="hint">Favorites includes every saved site. Choose a section to show a site there too.</p></div></div>
  <div class="game-shell" id="gameShell">
   <div class="menu-backdrop" aria-hidden="true"></div><div class="menu-pattern" aria-hidden="true"></div><div class="menu-star" aria-hidden="true">★</div>
   <div class="menu-character" aria-hidden="true"><img class="cast-portrait" data-character="joker" src="./assets/menu-joker.png" alt="" fetchpriority="high"></div>
@@ -34,4 +34,4 @@
   <button class="daily-skip" id="dailySkip" type="button">SKIP</button>
   <button class="daily-skip daily-sound-retry" id="dailySoundRetry" type="button" hidden>REPLAY WITH SOUND</button>
 </div>
-<script src="./assets/phantom-core.js?v=1.0"></script><script src="./assets/phantom-audio.js?v=2.1"></script><script src="./assets/phantom-v4.js?v=24.1"></script><script src="./assets/phantom-daily.js?v=11.1"></script></body></html>
+<script src="./assets/phantom-core.js?v=1.1"></script><script src="./assets/phantom-audio.js?v=2.1"></script><script src="./assets/phantom-v4.js?v=24.2"></script><script src="./assets/phantom-daily.js?v=11.1"></script></body></html>

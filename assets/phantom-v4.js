@@ -47,11 +47,6 @@
   ];
   let selected=0, query='', entranceTimer;
   let caseDraft='',caseSource='github';
-  const category={
-    dev:/github|kaggle|stackoverflow|leetcode|huggingface|vercel|docker|code|python|react/i,
-    study:/almau|university|academy|notion|drive|calendar|office|figma|linear|jira|teams|coursera|edx/i,
-    media:/youtube|youtu\.be|reddit|spotify|twitch|netflix|soundcloud|music|pinterest|kinopoisk/i
-  };
   const safe=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   function cutLetters(label){
     return [...label].map((letter,i)=>`<span class="news-letter" style="--letter-tilt:${[-5,3,-2,5,0][i%5]}deg;--letter-scale:${[1.06,.88,1,.96][i%4]}em" aria-hidden="true">${safe(letter)}</span>`).join('');
@@ -150,8 +145,8 @@
   document.addEventListener('visibilitychange',()=>{shell.classList.toggle('is-page-hidden',document.hidden);clearTimeout(clockTimer);if(!document.hidden)tick();});
   tick();
   function linkList(mode){
-    const visible=items.filter(item=>validUrl(item.url)&&(mode==='links'||category[mode]?.test(item.name+' '+item.url))).slice(0,16);
-    if(!visible.length)return '<p class="game-empty">No destinations yet. Add a site in Config and matching sites will appear here.</p><button class="game-cta" data-edit>ADD A DESTINATION</button>';
+    const visible=items.filter(item=>validUrl(item.url)&&(mode==='links'||destinationSection(item)===mode)).slice(0,16);
+    if(!visible.length)return '<p class="game-empty">No destinations yet. Add your first site to this section.</p><button class="game-cta" data-edit>ADD A DESTINATION</button>';
     return '<nav class="game-links" aria-label="Saved destinations">'+visible.map((item,i)=>{
       const href=validUrl(item.url),host=new URL(href).hostname.replace(/^www\./,'');
       return `<a class="game-link" href="${safe(href)}" rel="noopener noreferrer" title="${safe(item.name)} — ${safe(host)}"><b aria-hidden="true">${String(i+1).padStart(2,'0')}</b><span class="link-name">${safe(item.name)}</span><small class="link-host">${safe(host)}</small></a>`;
@@ -202,7 +197,7 @@
       content+='<section class="sound-settings" aria-label="Music"></section><div class="settings-links"><span>YOUR SITES</span><button class="game-cta" data-edit>EDIT DESTINATIONS</button></div><button class="intro-replay" type="button" data-replay>REPLAY DATE INTRO</button>';
     }else if(section.id==='search')content+=searchForm();
     else if(section.id==='hub')content+=hub();
-    else content+=`<div class="detail-caption"><span>${section.caption}</span><button type="button" data-edit aria-label="Edit destinations">EDIT</button></div>${linkList(section.id)}`;
+    else content+=`<div class="detail-caption"><span>${section.caption}</span><button type="button" data-edit aria-label="Edit destinations">EDIT LINKS</button></div>${linkList(section.id)}`;
     const direction=selected>=previous?1:-1;
     const departing=oldSheet&&sceneReady&&motion&&selected!==previous?oldSheet.cloneNode(true):null;
     const departingFrame=departing?{transform:getComputedStyle(oldSheet).transform,opacity:getComputedStyle(oldSheet).opacity}:null;
@@ -251,7 +246,7 @@
   function focusSearch(){if(sections[selected].id!=='search')select(0);document.getElementById('gameSearchInput')?.focus();}
   let editorReturn=null;
   function openEditor(){
-    editorReturn=document.activeElement;document.getElementById('settings').click();shell.inert=true;
+    editorReturn=document.activeElement;window.PhantomEditLinks(sections[selected].id);shell.inert=true;
     document.querySelector('#settingsList input')?.focus();
     if(!document.querySelector('#settingsList input'))document.getElementById('newName').focus();
   }
@@ -262,7 +257,7 @@
     if(editorReturn){
       if(event.key==='Escape'){event.preventDefault();restoreEditor();return;}
       if(event.key==='Tab'){
-        const controls=[...document.querySelectorAll('#modal button,#modal input')].filter(el=>!el.disabled);
+        const controls=[...document.querySelectorAll('#modal button,#modal input,#modal select')].filter(el=>!el.disabled);
         if(event.shiftKey&&document.activeElement===controls[0]){event.preventDefault();controls.at(-1).focus();}
         else if(!event.shiftKey&&document.activeElement===controls.at(-1)){event.preventDefault();controls[0].focus();}
       }
