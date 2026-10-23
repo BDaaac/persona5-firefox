@@ -57,9 +57,9 @@ document.getElementById('run').onclick=async()=>{
  check(doc().getElementById('searchDestination').textContent==='OPEN WEBSITE','Search ticket recognizes a website address');
  input.value='keep draft';pick('links');
  check(!doc().getElementById('gameSearchInput'),'Favorites has no duplicate search field');
- check(doc().querySelectorAll('.calling-sheet:not(.sheet-exit) .game-link').length===6&&doc().querySelectorAll('.calling-sheet:not(.sheet-exit) .link-host').length===6,'Favorites renders six destination cards with hostnames');
+ check(doc().querySelectorAll('.calling-sheet:not(.sheet-exit) .game-link').length===1&&doc().querySelectorAll('.calling-sheet:not(.sheet-exit) .link-host').length===1,'Favorites shows only its own saved destination');
  pick('search');check(doc().getElementById('gameSearchInput').value==='keep draft','Search draft survives section changes');pick('links');
- const github=doc().querySelector('.game-link[href="https://github.com/"]');github.focus();key(github,'ArrowDown');
+ const favoriteLink=doc().querySelector('.game-link[href="https://chatgpt.com/"]');favoriteLink.focus();key(favoriteLink,'ArrowDown');
  check(doc().getElementById('gameShell').dataset.scene==='links','Arrow keys on links do not unexpectedly change section');
  pick('dev');check(doc().querySelectorAll('.calling-sheet:not(.sheet-exit) .game-link').length===2,'Develop filters GitHub and Kaggle');
  pick('study');check(doc().querySelector('.game-link').textContent.includes('ALMAU'),'Study includes ALMAU');
@@ -93,7 +93,7 @@ document.getElementById('run').onclick=async()=>{
  check(new Set([...doc().querySelectorAll('.ticker-sequence:first-child>span')].map(el=>el.textContent)).size===4,'Clock scrolls four distinct phrases');
  key(doc().activeElement,'ArrowUp');check(doc().activeElement.dataset.scene==='media','Menu arrows change section and focus');
  key(doc().activeElement,'/');check(doc().activeElement.id==='gameSearchInput','Slash focuses search from another section');
- for(const [section,count] of [['dev',2],['study',1],['media',2],['links',6]]){
+ for(const [section,count] of [['dev',2],['study',1],['media',2],['links',1]]){
   pick(section);doc().querySelector('.calling-sheet:not(.sheet-exit) [data-edit]').click();
   check(doc().querySelectorAll('#settingsList .settings-row').length===count,`${section} editor shows its own destinations`);
   doc().getElementById('close').click();
@@ -118,7 +118,7 @@ document.getElementById('run').onclick=async()=>{
   pick('study');check(!!doc().querySelector('.calling-sheet:not(.sheet-exit) a[href="https://example.org/changed"]'),'Moved destination appears in the chosen section');
   check(JSON.parse(win().localStorage.getItem('phantom-start-links-v1')).find(item=>item.name==='MY TOOL')?.section==='study','Section assignment persists in saved data');
   check(JSON.parse(win().localStorage.getItem('phantom-start-links-v1')).find(item=>item.name==='GITHUB')?.section==='dev','Legacy destinations keep their sections when saved');
-  pick('links');check(!!doc().querySelector('.calling-sheet:not(.sheet-exit) a[href="https://example.org/changed"]'),'Favorites continues to include all saved destinations');
+  pick('links');check(!doc().querySelector('.calling-sheet:not(.sheet-exit) a[href="https://example.org/changed"]'),'Study destinations do not appear in Favorites');
   pick('dev');doc().querySelector('.calling-sheet:not(.sheet-exit) [data-edit]').click();
   const previousConfirm=win().confirm;win().confirm=()=>true;doc().getElementById('reset').click();win().confirm=previousConfirm;doc().getElementById('close').click();
   check(JSON.parse(win().localStorage.getItem('phantom-start-links-v1')).some(item=>item.name==='MY TOOL'&&item.section==='study'),'Resetting one section preserves custom sites in other sections');
@@ -127,12 +127,21 @@ document.getElementById('run').onclick=async()=>{
   check(!doc().querySelector('.calling-sheet:not(.sheet-exit) a[href="https://example.org/changed"]'),'Deleting in a section removes the selected destination');
  }
  pick('settings');doc().querySelector('[data-edit]').click();
+ check(doc().querySelectorAll('#settingsList .settings-row').length===6,'Config keeps the global editor while Favorites stays independent');
  check(!doc().getElementById('modal').hidden&&doc().getElementById('gameShell').inert,'Link editor opens with background inert');
  const name=doc().querySelector('#settingsList input');name.value='MY CHATGPT';name.dispatchEvent(new (win().Event)('change',{bubbles:true}));
  doc().getElementById('close').click();pick('links');check(doc().querySelector('.game-link').textContent.includes('MY CHATGPT'),'Edited destination updates and persists');
  pick('settings');doc().querySelector('[data-edit]').click();key(doc().activeElement,'Escape');
  check(doc().getElementById('modal').hidden&&!doc().getElementById('gameShell').inert,'Escape closes settings and restores interaction');
  pick('links');doc().querySelector('.calling-sheet:not(.sheet-exit) [data-edit]').click();
+ doc().getElementById('newName').value='FAVORITE GITHUB COPY';doc().getElementById('newUrl').value='https://github.com/';doc().getElementById('newSection').value='links';doc().getElementById('addForm').requestSubmit();
+ const favoriteCopy=[...doc().querySelectorAll('#settingsList .settings-row')].find(row=>row.querySelector('input').value==='FAVORITE GITHUB COPY');favoriteCopy.querySelector('button').click();doc().getElementById('close').click();
+ check(!doc().querySelector('.calling-sheet:not(.sheet-exit) a[href="https://github.com/"]'),'Deleting a Favorite removes only its own copy');
+ pick('dev');check(!!doc().querySelector('.calling-sheet:not(.sheet-exit) a[href="https://github.com/"]'),'Deleting a Favorite leaves the same URL in Develop untouched');
+ pick('links');doc().querySelector('.calling-sheet:not(.sheet-exit) [data-edit]').click();
+ const otherSectionsBeforeReset=JSON.stringify(JSON.parse(win().localStorage.getItem('phantom-start-links-v1')).filter(item=>item.section!=='links'));
+ const confirmFavoritesReset=win().confirm;win().confirm=()=>true;doc().getElementById('reset').click();win().confirm=confirmFavoritesReset;
+ check(JSON.stringify(JSON.parse(win().localStorage.getItem('phantom-start-links-v1')).filter(item=>item.section!=='links'))===otherSectionsBeforeReset,'Resetting Favorites leaves all other saved records unchanged');
  const immediateName=doc().querySelector('#settingsList input');immediateName.value='SAVED WITHOUT BLUR';immediateName.dispatchEvent(new (win().Event)('input',{bubbles:true}));
  check(JSON.parse(win().localStorage.getItem('phantom-start-links-v1')).some(item=>item.name==='SAVED WITHOUT BLUR'),'Existing edits are saved before the field loses focus');
  immediateName.value='MY CHATGPT';immediateName.dispatchEvent(new (win().Event)('change',{bubbles:true}));
@@ -144,10 +153,10 @@ document.getElementById('run').onclick=async()=>{
  immediateName.value='MY CHATGPT';immediateName.dispatchEvent(new (win().Event)('change',{bubbles:true}));
  doc().getElementById('newName').value='SAVING TEST DONE';doc().getElementById('newUrl').value='https://example.com/done';doc().getElementById('newSection').value='dev';doc().getElementById('close').click();
  check(JSON.parse(win().localStorage.getItem('phantom-start-links-v1')).some(item=>item.name==='SAVING TEST DONE'&&item.section==='dev'),'DONE saves a completed new destination without requiring a separate ADD click');
- pick('links');doc().querySelector('.calling-sheet:not(.sheet-exit) [data-edit]').click();
+ pick('settings');doc().querySelector('.calling-sheet:not(.sheet-exit) [data-edit]').click();
  let savingRow;while(savingRow=[...doc().querySelectorAll('#settingsList .settings-row')].find(row=>row.querySelector('input').value.startsWith('SAVING TEST ')))savingRow.querySelector('button').click();
  doc().getElementById('newName').value='';doc().getElementById('newUrl').value='';doc().getElementById('close').click();
- pick('links');
+ pick('media');
  const externalSites=JSON.parse(win().localStorage.getItem('phantom-start-links-v1'));
  externalSites.push({id:'review-storage-event',name:'SAVING TEST EVENT',url:'https://example.com/storage-event',section:'media'});
  const externalValue=JSON.stringify(externalSites);win().localStorage.setItem('phantom-start-links-v1',externalValue);
@@ -174,7 +183,7 @@ document.getElementById('run').onclick=async()=>{
   check(savedSites().length===before&&doc().getElementById('destinationStatus').dataset.error==='true',`${section} rejects a ninth destination without changing saved data`);
   doc().getElementById('newName').value='';doc().getElementById('newUrl').value='';
   doc().getElementById('close').click();
-  if(section!=='links'){
+  {
    await pause(1100);
    const grid=doc().querySelector('.calling-sheet:not(.sheet-exit) .game-links');
    check(grid.children.length===8,`${section} renders all eight destinations`);
@@ -184,16 +193,16 @@ document.getElementById('run').onclick=async()=>{
   }
  }
  check(savedSites().length===32,'Four sections hold eight sites each without the old global limit');
- check(doc().querySelectorAll('.calling-sheet:not(.sheet-exit) .game-link').length===savedSites().length,'Favorites never drops destinations from the combined collection');
+ check(doc().querySelectorAll('.calling-sheet:not(.sheet-exit) .game-link').length===8,'Favorites independently displays its eight sites');
  pick('dev');doc().querySelector('.calling-sheet:not(.sheet-exit) [data-edit]').click();
  const fullRow=[...doc().querySelectorAll('#settingsList .settings-row')].find(row=>row.querySelector('input').value.startsWith('CAPACITY DEV'));
  const fullSelect=fullRow.querySelector('select');fullSelect.value='study';fullSelect.dispatchEvent(new (win().Event)('change',{bubbles:true}));
  check(fullSelect.value==='dev'&&savedSites().filter(item=>item.section==='study').length===8,'Moving into a full section preserves the original assignment');
- doc().getElementById('close').click();pick('links');doc().querySelector('.calling-sheet:not(.sheet-exit) [data-edit]').click();
+ doc().getElementById('close').click();pick('settings');doc().querySelector('.calling-sheet:not(.sheet-exit) [data-edit]').click();
  let capacityRow;while(capacityRow=[...doc().querySelectorAll('#settingsList .settings-row')].find(row=>row.querySelector('input').value.startsWith('CAPACITY ')))capacityRow.querySelector('button').click();
  doc().getElementById('close').click();
  const beforeReload=win().localStorage.getItem('phantom-start-links-v1');await setup(beforeReload);pick('links');
- check(win().localStorage.getItem('phantom-start-links-v1')===beforeReload&&JSON.parse(beforeReload).every(item=>[...doc().querySelectorAll('.calling-sheet:not(.sheet-exit) .game-link')].some(link=>link.getAttribute('href')===new URL(item.url).href&&link.textContent.includes(item.name))),'A fresh page load restores saved names, addresses and sections');
+ check(win().localStorage.getItem('phantom-start-links-v1')===beforeReload&&JSON.parse(beforeReload).every(item=>{pick(item.section);return [...doc().querySelectorAll('.calling-sheet:not(.sheet-exit) .game-link')].some(link=>link.getAttribute('href')===new URL(item.url).href&&link.textContent.includes(item.name));}),'A fresh page load restores saved names, addresses and sections');
  pick('search');doc().getElementById('gameSearchInput').value='';
  await pause(400);
  for(const width of [390,768,1280]){

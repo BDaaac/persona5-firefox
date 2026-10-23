@@ -145,7 +145,7 @@
   document.addEventListener('visibilitychange',()=>{shell.classList.toggle('is-page-hidden',document.hidden);clearTimeout(clockTimer);if(!document.hidden)tick();});
   tick();
   function linkList(mode){
-    const visible=items.filter(item=>validUrl(item.url)&&(mode==='links'||destinationSection(item)===mode));
+    const visible=items.filter(item=>validUrl(item.url)&&destinationSection(item)===mode);
     if(!visible.length)return '<p class="game-empty">No destinations yet. Add your first site to this section.</p><button class="game-cta" data-edit>ADD A DESTINATION</button>';
     return '<nav class="game-links'+(visible.length>6?' is-dense':'')+'" aria-label="Saved destinations">'+visible.map((item,i)=>{
       const href=validUrl(item.url),host=new URL(href).hostname.replace(/^www\./,'');
@@ -246,7 +246,7 @@
   function focusSearch(){if(sections[selected].id!=='search')select(0);document.getElementById('gameSearchInput')?.focus();}
   let editorReturn=null;
   function openEditor(){
-    editorReturn=document.activeElement;window.PhantomEditLinks(sections[selected].id);shell.inert=true;
+    editorReturn=document.activeElement;window.PhantomEditLinks(sections[selected].id==='settings'?'all':sections[selected].id);shell.inert=true;
     document.querySelector('#settingsList input')?.focus();
     if(!document.querySelector('#settingsList input'))document.getElementById('newName').focus();
   }

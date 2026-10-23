@@ -48,12 +48,12 @@ document.querySelector('#search').addEventListener('submit',e=>{e.preventDefault
 const modal=document.querySelector('#modal');
 let editorMode='links';
 function edit(mode=editorMode){
-  editorMode=Object.hasOwn(destinationSections,mode)?mode:'links';
-  const scoped=editorMode!=='links';
+  editorMode=mode==='all'||Object.hasOwn(destinationSections,mode)?mode:'links';
+  const scoped=editorMode!=='all';
   document.querySelector('#modalTitle').textContent=scoped?destinationSections[editorMode].toUpperCase()+' DESTINATIONS':'ALL DESTINATIONS';
   const count=items.filter(item=>destinationSection(item)===editorMode).length;
-  document.querySelector('#editorDescription').textContent=scoped?destinationSections[editorMode]+': '+count+' / '+destinationLimit+' sites. Existing edits save automatically.':'Up to 8 sites per section. Favorites includes all saved sites.';
-  if(!document.querySelector('#newName').value&&!document.querySelector('#newUrl').value)document.querySelector('#newSection').value=editorMode;
+  document.querySelector('#editorDescription').textContent=scoped?destinationSections[editorMode]+': '+count+' / '+destinationLimit+' sites. Existing edits save automatically.':'Edit all sections here. Each section keeps its own sites, up to 8 each.';
+  if(!document.querySelector('#newName').value&&!document.querySelector('#newUrl').value)document.querySelector('#newSection').value=scoped?editorMode:'links';
   document.querySelector('#reset').textContent=scoped?'RESET SECTION':'RESET ALL';
   const box=document.querySelector('#settingsList');box.replaceChildren();
   items.forEach(item=>{
@@ -72,7 +72,7 @@ function edit(mode=editorMode){
     url.addEventListener('input',saveUrl);url.addEventListener('change',saveUrl);
     const section=document.createElement('select');section.setAttribute('aria-label','Section');
     for(const [value,label] of Object.entries(destinationSections)){
-      const option=document.createElement('option');option.value=value;option.textContent=value==='links'?'Favorites only':label;section.append(option);
+      const option=document.createElement('option');option.value=value;option.textContent=label;section.append(option);
     }
     section.value=destinationSection(item);
     section.addEventListener('change',()=>{
@@ -84,7 +84,7 @@ function edit(mode=editorMode){
     row.append(no,name,url,section,del);box.append(row);
   });
 }
-window.PhantomEditLinks=(mode='links')=>{
+window.PhantomEditLinks=(mode='all')=>{
   let error;try{items=readDestinations();}catch(failure){error=failure;}
   edit(mode);modal.hidden=false;destinationStatus('');if(error)storageFailure(error);
 };
@@ -116,7 +116,7 @@ document.querySelector('#addForm').addEventListener('submit',e=>{
   e.preventDefault();addDestination();
 });
 document.querySelector('#reset').onclick=()=>{
-  const scoped=editorMode!=='links';
+  const scoped=editorMode!=='all';
   if(!confirm(scoped?'Restore default destinations in '+destinationSections[editorMode]+'?':'Restore all default destinations?'))return;
   const restored=defaults.map(item=>({...item,section:destinationSection(item)}));
   if(persistDestinations(list=>{
