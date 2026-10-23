@@ -42,10 +42,11 @@
     {id:'dev',label:'Develop',character:'futaba',codename:'ORACLE / FUTABA',title:'Build<br><em>something.</em>',caption:'DEVELOPMENT'},
     {id:'study',label:'Study',character:'makoto',codename:'QUEEN / MAKOTO',title:'Stay<br><em>curious.</em>',caption:'WORK & STUDY'},
     {id:'media',label:'Media',character:'ryuji',codename:'SKULL / RYUJI',title:'After<br><em>hours.</em>',caption:'WATCH / LISTEN / READ'},
-    {id:'hub',label:'Daily',character:'akechi',codename:'GORO AKECHI',title:'Take your<br><em>time.</em>',caption:'YOUR DAILY HIDEOUT'},
+    {id:'hub',label:'Investigate',character:'akechi',codename:'GORO AKECHI',title:'Follow the<br><em>evidence.</em>',caption:'DETECTIVE DESK'},
     {id:'settings',label:'Config',character:'yusuke',codename:'FOX / YUSUKE',title:'Your place.<br><em>Your rules.</em>',caption:'MAKE IT YOURS'}
   ];
   let selected=0, query='', entranceTimer;
+  let caseDraft='',caseSource='github';
   const category={
     dev:/github|kaggle|stackoverflow|leetcode|huggingface|vercel|docker|code|python|react/i,
     study:/almau|university|academy|notion|drive|calendar|office|figma|linear|jira|teams|coursera|edx/i,
@@ -129,24 +130,29 @@
   const dateFormat=new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric'});
   const weekdayFormat=new Intl.DateTimeFormat('en-US',{weekday:'long'});
   let clockTimer,lastClock='',lastDay='';
+  const digitSegments=['abcdef','bc','abdeg','abcdg','bcfg','acdfg','acdefg','abc','abcdefg','abcdfg'];
+  const segmentShapes={a:'7,2 27,2 31,6 27,10 7,10 3,6',b:'28,11 32,7 36,11 36,29 32,33 28,29',c:'28,39 32,35 36,39 36,57 32,61 28,57',d:'7,58 27,58 31,62 27,66 7,66 3,62',e:'0,39 4,35 8,39 8,57 4,61 0,57',f:'0,11 4,7 8,11 8,29 4,33 0,29',g:'7,30 27,30 31,34 27,38 7,38 3,34'};
+  function renderClockDigits(id,value){
+    document.getElementById(id).innerHTML=[...value].map(digit=>'<svg viewBox="-2 0 40 68" aria-hidden="true" focusable="false">'+Object.entries(segmentShapes).map(([segment,points])=>`<polygon class="${digitSegments[Number(digit)].includes(segment)?'segment-on':'segment-off'}" points="${points}"/>`).join('')+'</svg>').join('');
+  }
   function tick(){
     const now=new Date();
     const time=clockFormat.format(now),day=now.toDateString();
     if(time!==lastClock){
       const [hours,minutes]=time.split(':');
-      document.getElementById('clockHours').textContent=hours;document.getElementById('clockMinutes').textContent=minutes;
+      renderClockDigits('clockHours',hours);renderClockDigits('clockMinutes',minutes);
       const clock=document.getElementById('gameClock');clock.dateTime=time;clock.setAttribute('aria-label',time);lastClock=time;
     }
     if(day!==lastDay){document.getElementById('gameDate').textContent=dateFormat.format(now).toUpperCase();document.getElementById('gameDay').textContent=weekdayFormat.format(now).toUpperCase();lastDay=day;}
     clearTimeout(clockTimer);
     if(!document.hidden)clockTimer=setTimeout(tick,60000-now.getSeconds()*1000-now.getMilliseconds()+20);
   }
-  document.addEventListener('visibilitychange',()=>{clearTimeout(clockTimer);if(!document.hidden)tick();});
+  document.addEventListener('visibilitychange',()=>{shell.classList.toggle('is-page-hidden',document.hidden);clearTimeout(clockTimer);if(!document.hidden)tick();});
   tick();
   function linkList(mode){
     const visible=items.filter(item=>validUrl(item.url)&&(mode==='links'||category[mode]?.test(item.name+' '+item.url))).slice(0,16);
-    if(!visible.length)return '<p class="game-empty">Здесь пока нет ссылок. Добавьте сайт через Config — подходящие сайты появятся в этом разделе.</p><button class="game-cta" data-edit>ADD A DESTINATION</button>';
-    return '<nav class="game-links" aria-label="Сохранённые сайты">'+visible.map((item,i)=>{
+    if(!visible.length)return '<p class="game-empty">No destinations yet. Add a site in Config and matching sites will appear here.</p><button class="game-cta" data-edit>ADD A DESTINATION</button>';
+    return '<nav class="game-links" aria-label="Saved destinations">'+visible.map((item,i)=>{
       const href=validUrl(item.url),host=new URL(href).hostname.replace(/^www\./,'');
       return `<a class="game-link" href="${safe(href)}" rel="noopener noreferrer" title="${safe(item.name)} — ${safe(host)}"><b aria-hidden="true">${String(i+1).padStart(2,'0')}</b><span class="link-name">${safe(item.name)}</span><small class="link-host">${safe(host)}</small></a>`;
     }).join('')+'</nav>';
@@ -156,8 +162,31 @@
     const domain=/^(?:localhost(?::\d+)?|(?:[a-z\d-]+\.)+[a-z]{2,})(?::\d+)?(?:[/?#][^\s]*)?$/i.test(value);
     return (explicit||domain)?validUrl(explicit?value:'https://'+value):null;
   }
-  const searchForm=()=>`<div class="search-ticket"><div class="ticket-top"><span>PHANTOM SEARCH SERVICE</span><span aria-hidden="true">★</span></div><label for="gameSearchInput">ЧТО БУДЕМ ИСКАТЬ?</label><form id="gameSearchForm" class="game-search" role="search"><input id="gameSearchInput" aria-label="Поиск в интернете" autocomplete="off" placeholder="Мысль, вопрос или адрес…" value="${safe(query)}"><button type="submit" aria-label="Найти"><small>LET’S</small>GO</button></form><div class="ticket-bottom"><span id="searchDestination">ПОИСК В GOOGLE</span><span>ENTER</span></div></div><p class="search-footnote"><kbd>/</kbd> НАЧАТЬ ПОИСК <span>•</span> <kbd>ESC</kbd> К МЕНЮ</p><div class="search-seal" aria-hidden="true">THE WORLD<br>IS ONE QUERY AWAY.</div>`;
-  function hub(){return '<div class="daily-hub"><div class="hub-status"><div><div class="hub-label">LOCAL TIME / ALMATY</div><div class="hub-value" id="hubClock">--:--</div><div class="hub-small" id="hubDate">Loading date…</div></div><div><div class="hub-label">WEATHER / ALMATY</div><div class="hub-value" id="hubWeather">--°</div><div class="hub-small" id="hubWeatherDetails">Checking weather…</div></div></div><div class="note-caption"><label class="hub-label" for="hubNote">TODAY’S MISSION</label><span id="noteStatus" role="status">LOCAL NOTE</span></div><textarea id="hubNote" class="hub-note" placeholder="Что сегодня задумал?" aria-label="Личные заметки"></textarea><button class="hub-replay" id="hubReplay">REPLAY DATE INTRO</button></div>';}
+  const searchForm=()=>`<div class="search-ticket"><div class="ticket-top"><span>PHANTOM SEARCH SERVICE</span><span aria-hidden="true">★</span></div><label for="gameSearchInput">WHAT ARE WE LOOKING FOR?</label><form id="gameSearchForm" class="game-search" role="search"><input id="gameSearchInput" aria-label="Search the web" autocomplete="off" placeholder="A thought, a question, or a URL…" value="${safe(query)}"><button type="submit" aria-label="Search"><small>LET’S</small>GO</button></form><div class="ticket-bottom"><span id="searchDestination">SEARCH GOOGLE</span></div></div><div class="search-seal" aria-hidden="true">THE WORLD<br>IS ONE QUERY AWAY.</div>`;
+  function hub(){return `<div class="investigation">
+    <div class="evidence-tools">
+      <a class="evidence-tool" href="https://lens.google.com/" target="_blank" rel="noopener noreferrer"><span class="evidence-number">01 / VISUAL SEARCH</span><strong>GOOGLE LENS</strong><span>Find the source. Identify the image.</span><small>UPLOAD A PHOTO IN LENS</small></a>
+      <a class="evidence-tool evidence-ai" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer"><span class="evidence-number">02 / AI ANALYSIS</span><strong>CHATGPT</strong><span>Explain a screenshot, code, or error.</span><small>ATTACH YOUR EVIDENCE IN CHATGPT</small></a>
+    </div>
+    <form class="case-form" id="caseForm" role="search" aria-label="Investigate a technical error">
+      <label for="caseQuery">03 / TRACE AN ERROR</label>
+      <textarea id="caseQuery" rows="2" maxlength="1000" required spellcheck="false" placeholder="Paste an error or exception…">${safe(caseDraft)}</textarea>
+      <div class="case-actions"><label class="case-source-label" for="caseSource">SEARCH IN<select id="caseSource" name="source"><option value="github"${caseSource==='github'?' selected':''}>GitHub issues</option><option value="stackoverflow"${caseSource==='stackoverflow'?' selected':''}>Stack Overflow</option><option value="web"${caseSource==='web'?' selected':''}>Web</option></select></label><button class="game-cta" type="submit">FIND LEADS</button></div>
+    </form>
+  </div>`;}
+  function initInvestigation(){
+    const form=document.getElementById('caseForm'),input=document.getElementById('caseQuery'),source=document.getElementById('caseSource');
+    input.addEventListener('input',()=>{caseDraft=input.value;input.setCustomValidity('');});
+    source.addEventListener('change',()=>{caseSource=source.value;});
+    form.addEventListener('submit',event=>{
+      event.preventDefault();const value=input.value.trim();
+      if(!value){input.setCustomValidity('Enter an error message to investigate.');input.reportValidity();return;}
+      const destination=source.value==='github'
+        ?'https://github.com/search?type=issues&q='+encodeURIComponent(value)
+        :'https://www.google.com/search?q='+encodeURIComponent((source.value==='stackoverflow'?'site:stackoverflow.com ':'')+value);
+      location.href=destination;
+    });
+  }
   function select(index,{focusMenu=false,motion=true}={}){
     const previous=selected;
     const oldSheet=detail.querySelector('.calling-sheet:not(.sheet-exit)');
@@ -170,10 +199,10 @@
     detail.dataset.mode=section.id;
     let content=`<div class="game-detail-top"><span>${String(selected+1).padStart(2,'0')} / ${section.label.toUpperCase()}</span><span>${section.codename}</span></div><h2 id="detailTitle">${section.title}</h2>`;
     if(section.id==='settings'){
-      content+='<p class="settings-copy">Твои сайты. В твоём порядке.<br>Добавляй, переименовывай и удаляй быстрые ссылки.</p><button class="game-cta" data-edit>EDIT DESTINATIONS</button><p class="game-detail-bottom">Ссылки и заметки сохраняются в этом браузере.</p>';
+      content+='<section class="sound-settings" aria-label="Music"></section><div class="settings-links"><span>YOUR SITES</span><button class="game-cta" data-edit>EDIT DESTINATIONS</button></div><button class="intro-replay" type="button" data-replay>REPLAY DATE INTRO</button>';
     }else if(section.id==='search')content+=searchForm();
     else if(section.id==='hub')content+=hub();
-    else content+=`<div class="detail-caption"><span>${section.caption}</span><button type="button" data-edit aria-label="Изменить ссылки">EDIT</button></div>${linkList(section.id)}<p class="game-detail-bottom">ВЫБЕРИ СВОЙ СЛЕДУЮЩИЙ АДРЕС </p>`;
+    else content+=`<div class="detail-caption"><span>${section.caption}</span><button type="button" data-edit aria-label="Edit destinations">EDIT</button></div>${linkList(section.id)}`;
     const direction=selected>=previous?1:-1;
     const departing=oldSheet&&sceneReady&&motion&&selected!==previous?oldSheet.cloneNode(true):null;
     const departingFrame=departing?{transform:getComputedStyle(oldSheet).transform,opacity:getComputedStyle(oldSheet).opacity}:null;
@@ -193,12 +222,15 @@
     detail.style.setProperty('--panel-angle',`${direction*3}deg`);
     frameScene(selected,sceneReady&&motion&&selected!==previous,direction);
     showCharacter(selected,sceneReady&&motion&&selected!==previous,direction);
+    if(sceneReady&&motion&&selected!==previous)window.PhantomAudio?.navigate();
     sceneReady=true;
+    if(section.id==='settings')window.PhantomAudio?.mount(sheet.querySelector('.sound-settings'));
+    detail.querySelector('[data-replay]')?.addEventListener('click',()=>window.PhantomReplayIntro?.());
     detail.querySelectorAll('[data-edit]').forEach(button=>button.addEventListener('click',openEditor));
     const form=document.getElementById('gameSearchForm');
     if(form){
       const input=document.getElementById('gameSearchInput');
-      const updateDestination=()=>document.getElementById('searchDestination').textContent=directAddress(input.value.trim())?'ОТКРЫТЬ САЙТ':'ПОИСК В GOOGLE';
+      const updateDestination=()=>document.getElementById('searchDestination').textContent=directAddress(input.value.trim())?'OPEN WEBSITE':'SEARCH GOOGLE';
       input.addEventListener('input',updateDestination);updateDestination();
       form.addEventListener('submit',event=>{
       event.preventDefault();const value=document.getElementById('gameSearchInput').value.trim();if(!value)return;
@@ -206,7 +238,7 @@
       location.href=destination||'https://www.google.com/search?q='+encodeURIComponent(value);
       });
     }
-    if(section.id==='hub')window.PhantomInitHub?.();
+    if(section.id==='hub')initInvestigation();
     if(focusMenu)options[selected].focus({preventScroll:true});
   }
   function enter(){clearTimeout(entranceTimer);shell.classList.remove('is-entering');void shell.offsetWidth;shell.classList.add('is-entering');entranceTimer=setTimeout(()=>shell.classList.remove('is-entering'),800);}
@@ -245,7 +277,7 @@
     if(menu.contains(active)||active===document.body){
       if(event.key==='ArrowDown'){event.preventDefault();select(selected+1,{focusMenu:true});}
       else if(event.key==='ArrowUp'){event.preventDefault();select(selected-1,{focusMenu:true});}
-      else if(event.key==='Enter'){event.preventDefault();if(sections[selected].id==='settings')detail.querySelector('[data-edit]')?.click();else if(sections[selected].id==='search')focusSearch();else if(sections[selected].id==='hub')document.getElementById('hubNote')?.focus();else (detail.querySelector('.game-link')||detail.querySelector('[data-edit]'))?.focus();}
+      else if(event.key==='Enter'){event.preventDefault();if(sections[selected].id==='settings')detail.querySelector('[data-track][aria-pressed=true]')?.focus();else if(sections[selected].id==='search')focusSearch();else if(sections[selected].id==='hub')document.getElementById('caseQuery')?.focus();else (detail.querySelector('.game-link')||detail.querySelector('[data-edit]'))?.focus();}
     }
   });
   select(0);enter();

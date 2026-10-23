@@ -9,6 +9,8 @@ index.old.html
 review/*
 !review/menu.html
 !review/motion.html
+!review/audio.html
+!review/menu-audio.test.cjs
 !review/README.md
 !review/menu-v18.md
 !review/menu-v18-checks.txt
@@ -16,6 +18,7 @@ review/*
 !review/performance-v17-baseline.json
 !review/performance-v18.json
 !review/grey-background-applied.png
+!review/investigate-final.png
 
 # OS/editor artifacts and secrets
 .DS_Store

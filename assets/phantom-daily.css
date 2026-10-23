@@ -65,6 +65,8 @@ html.phantom-intro-open{overflow:hidden}
 }
 .daily-skip:hover{background:#d10111;color:#fefefe}
 .daily-skip:focus-visible{outline:3px solid #fefefe;outline-offset:5px}
+.daily-sound-retry{left:3%;right:auto;max-width:calc(94% - 100px);font-family:Arial,sans-serif;font-size:12px;transform:rotate(-3deg)}
+.daily-sound-retry[hidden]{display:none}
 .daily-intro.is-running .daily-city{
   animation:city-travel 1400ms cubic-bezier(.2,.65,.25,1) both,city-impact 210ms var(--impact-at) linear;
 }

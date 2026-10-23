@@ -50,8 +50,8 @@ document.querySelector('#test').onclick=async()=>{
  check(doc().querySelector('#dailyYear').textContent.includes('2027'),'Year updates on replay');
  doc().querySelector('#dailySkip').click();await pause(700);
  check(doc().querySelector('#dailyIntro').hidden,'Skip dismisses the dialog');
- check(!!doc().querySelector('#hubReplay'),'Skip opens Daily Hub');
- check(doc().querySelector('#hubNote')?.value==='KEEP MY NOTE','Existing note preserved');
+ check(!!doc().querySelector('#caseQuery'),'Skip opens the investigation desk');
+ check(win().localStorage.getItem('phantom-hub-note-v1')==='KEEP MY NOTE','Existing note preserved in storage');
  check(win().localStorage.getItem('phantom-intro-last-date-v1')==='2027-01-01','Once-per-day marker uses the displayed day');
  win().PhantomReplayIntro();doc().querySelector('#dailySkip').click();win().PhantomReplayIntro();await pause(700);
  check(!doc().querySelector('#dailyIntro').hidden,'Replay cancels a pending close');

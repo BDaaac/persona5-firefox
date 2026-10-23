@@ -1,0 +1,60 @@
+<!doctype html><meta charset="utf-8"><title>PHANTOM — audio checks</title>
+<style>body{background:#111;color:white;font:14px system-ui}button{padding:12px}iframe{width:100%;height:540px;border:0}pre{white-space:pre-wrap}</style>
+<button id="run" disabled>Run audio checks</button><pre id="results">Loading…</pre><iframe id="scene" title="Isolated audio test"></iframe>
+<script>
+const scene=document.querySelector('#scene'),results=document.querySelector('#results');
+const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+async function setup(){
+ let html=await(await fetch('../index.html',{cache:'no-store'})).text();
+ const boot=`<base href="${new URL('../',location.href)}"><script>
+ const memory=new Map(),now=new Date();memory.set('phantom-intro-last-date-v1',[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-'));
+ Object.defineProperty(window,'localStorage',{value:{getItem:k=>memory.get(k)??null,setItem:(k,v)=>memory.set(k,String(v))}});
+ window.fetch=async()=>({ok:true,json:async()=>({current:{temperature_2m:18,weather_code:0,apparent_temperature:17}})});
+ window.audioTest={created:0,plays:0,pauses:0,mode:'ok',pending:[],errors:[]};
+ window.addEventListener('unhandledrejection',event=>audioTest.errors.push(event.reason?.message));
+ window.Audio=function(url){const audio=document.createElement('audio');audio.dataset.source=url;audioTest.created++;
+ Object.defineProperty(audio,'currentTime',{value:0,writable:true});
+ audio.play=()=>{audioTest.plays++;if(audioTest.mode==='blocked')return Promise.reject(new DOMException('Test autoplay denial','NotAllowedError'));if(audioTest.mode==='deferred')return new Promise((resolve,reject)=>audioTest.pending.push({resolve,reject}));return Promise.resolve();};
+ audio.pause=()=>audioTest.pauses++;return audio;};
+ window.testHidden=false;Object.defineProperty(document,'hidden',{get:()=>window.testHidden});
+ <\/script>`;
+ html=html.replace('<head>','<head>'+boot);
+ for(const name of ['phantom-v4','phantom-daily']){
+  const source=await(await fetch('../assets/'+name+'.js',{cache:'no-store'})).text();
+  html=html.replace(new RegExp('<script src="./assets/'+name+'\\.js(?:\\?[^\"]*)?"><\\/script>'),'<script>'+source+'<\/script>');
+ }
+ const loaded=new Promise(resolve=>scene.onload=resolve);scene.srcdoc=html;await loaded;
+ document.querySelector('#run').disabled=false;results.textContent='Ready';
+}
+document.querySelector('#run').onclick=async()=>{
+ const w=scene.contentWindow,d=scene.contentDocument,t=w.audioTest,checks=[];
+ const check=(ok,label)=>checks.push((ok?'PASS ':'FAIL ')+label);
+ const intro=d.querySelector('#dailyIntro'),retry=d.querySelector('#dailySoundRetry');
+ check(t.created===0,'No audio is allocated before the intro is requested');
+ t.mode='blocked';w.PhantomReplayIntro();await pause(25);
+ check(intro.dataset.sound==='blocked'&&!retry.hidden,'Autoplay denial exposes a replay button');
+ retry.focus();retry.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Enter',bubbles:true,cancelable:true}));
+ check(!intro.classList.contains('is-leaving'),'Enter on sound replay does not skip the intro');
+ t.mode='ok';retry.click();await pause(25);
+ const audio=d.querySelector('#dailySoundtrack');
+ check(intro.dataset.sound==='playing'&&retry.hidden,'User retry starts audio and hides the fallback');
+ check(t.created===1&&audio.volume===.75,'One audio element is reused at the intended volume');
+ check(audio.dataset.source==='./assets/audio/calendar-transition.ogg','Playback uses the local game-effect track');
+ t.mode='deferred';w.PhantomReplayIntro();await pause(110);t.pending.shift().resolve();await pause(10);
+ check(audio.currentTime>=.1,'A slow start catches up to the visual timeline');
+ w.PhantomReplayIntro();const stale=t.pending.shift();t.mode='ok';w.PhantomReplayIntro();await pause(10);stale.reject(new w.DOMException('Stale rejection','NotAllowedError'));await pause(10);
+ check(intro.dataset.sound==='playing'&&retry.hidden,'A stale rejection cannot overwrite the latest replay');
+ const pausesBefore=t.pauses;d.querySelector('#dailySkip').click();
+ check(t.pauses>pausesBefore&&audio.currentTime===0,'Skipping immediately stops and rewinds sound');
+ t.mode='deferred';w.PhantomReplayIntro();const late=t.pending.shift();d.querySelector('#dailySkip').click();late.resolve();await pause(10);
+ check(intro.dataset.sound!=='playing'&&audio.currentTime===0,'A delayed play result cannot revive a skipped run');
+ t.mode='ok';w.PhantomReplayIntro();await pause(10);w.testHidden=true;const hiddenPauses=t.pauses;d.dispatchEvent(new w.Event('visibilitychange'));
+ check(t.pauses>hiddenPauses&&audio.currentTime===0,'Hiding the page stops sound');
+ w.testHidden=false;audio.dispatchEvent(new w.Event('ended'));
+ check(intro.dataset.sound==='idle','Natural playback completion clears playing state');
+ d.querySelector('#dailySkip').click();await pause(350);
+ check(t.errors.length===0,'No unhandled audio promise rejections');
+ results.textContent=checks.join('\n');
+};
+setup();
+</script>

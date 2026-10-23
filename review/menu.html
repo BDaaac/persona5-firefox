@@ -21,7 +21,7 @@ async function setup(){
  for(const name of ['phantom-v4','phantom-daily']){
   let source=await(await fetch(`../assets/${name}.js`,{cache:'no-store'})).text();
   // Capture navigation only inside this disposable fixture; production opens the URL.
-  if(name==='phantom-v4')source=source.replace('location.href=destination','window.reviewNavigation=destination');
+  if(name==='phantom-v4')source=source.replaceAll('location.href=destination','window.reviewNavigation=destination');
   html=html.replace(new RegExp(`<script src="./assets/${name}\\.js(?:\\?[^"]*)?"><\\/script>`),`<script>${source}<\/script>`);
  }
  const loaded=new Promise(resolve=>scene.onload=resolve);scene.srcdoc=html;await loaded;await pause(850);
@@ -42,7 +42,7 @@ document.getElementById('run').onclick=async()=>{
  pick('search');check(doc().querySelectorAll('.game-option').length===7,'Seven working command sections');
  check(initialPortraitRequests===1,'Only the initial portrait is requested on startup');
  check(!doc().querySelector('.game-brand')&&doc().getElementById('gameClock').getBoundingClientRect().left<scene.clientWidth/3,'Clock replaces the logo in the left corner');
- check(/^\d{2}:\d{2}$/.test(doc().getElementById('gameClock').getAttribute('datetime')),'Cut-letter clock exposes a valid time');
+ check(/^\d{2}:\d{2}$/.test(doc().getElementById('gameClock').getAttribute('datetime')),'Station clock exposes a valid time');
  check(doc().querySelectorAll('.calling-sheet:not(.sheet-exit) .game-link').length===0,'Dedicated Search has no quick links');
  check(doc().querySelector('.menu-character img[data-character="joker"]').naturalWidth>0,'Character asset loaded');
  const input=doc().getElementById('gameSearchInput');input.value='persona 5 меню';
@@ -53,7 +53,7 @@ document.getElementById('run').onclick=async()=>{
  input.value='javascript:alert(1)';doc().getElementById('gameSearchForm').dispatchEvent(new (win().Event)('submit',{bubbles:true,cancelable:true}));
  check(win().reviewNavigation.startsWith('https://www.google.com/search?'),'Executable scheme is treated as search text');
  input.value='example.com';input.dispatchEvent(new (win().Event)('input',{bubbles:true}));
- check(doc().getElementById('searchDestination').textContent==='ОТКРЫТЬ САЙТ','Search ticket recognizes a website address');
+ check(doc().getElementById('searchDestination').textContent==='OPEN WEBSITE','Search ticket recognizes a website address');
  input.value='keep draft';pick('links');
  check(!doc().getElementById('gameSearchInput'),'Favorites has no duplicate search field');
  check(doc().querySelectorAll('.calling-sheet:not(.sheet-exit) .game-link').length===6&&doc().querySelectorAll('.calling-sheet:not(.sheet-exit) .link-host').length===6,'Favorites renders six destination cards with hostnames');
@@ -63,12 +63,33 @@ document.getElementById('run').onclick=async()=>{
  pick('dev');check(doc().querySelectorAll('.calling-sheet:not(.sheet-exit) .game-link').length===2,'Develop filters GitHub and Kaggle');
  pick('study');check(doc().querySelector('.game-link').textContent.includes('ALMAU'),'Study includes ALMAU');
  pick('media');check(doc().querySelectorAll('.calling-sheet:not(.sheet-exit) .game-link').length===2,'Media includes YouTube and Reddit');
- pick('hub');await pause(50);check(doc().getElementById('hubNote').value==='KEEP MY NOTE','Existing note preserved');
- const note=doc().getElementById('hubNote');note.value='Saved test note';note.dispatchEvent(new (win().Event)('input',{bubbles:true}));pick('links');pick('hub');
- check(doc().getElementById('hubNote').value==='Saved test note','Notes persist after navigation');
- doc().getElementById('hubNote').focus();key(doc().getElementById('hubNote'),'ArrowDown');
- check(doc().getElementById('gameShell').dataset.scene==='hub','Note arrow keys retain editing behavior');
- key(doc().getElementById('hubNote'),'Escape');check(doc().activeElement.dataset.scene==='hub','Escape returns focus from editor to active command');
+ pick('hub');await pause(50);
+ check(!doc().getElementById('hubClock')&&!doc().getElementById('hubNote'),'Investigation replaces the redundant clock and notes');
+ check(win().localStorage.getItem('phantom-hub-note-v1')==='KEEP MY NOTE','Existing saved note remains untouched');
+ check(doc().querySelector('.evidence-tool').href==='https://lens.google.com/','Visual evidence opens the Lens upload entry point');
+ check(doc().querySelector('.evidence-ai').href==='https://chatgpt.com/','AI evidence opens ChatGPT');
+ check([...doc().querySelectorAll('.evidence-tool')].every(link=>link.target==='_blank'&&link.rel.includes('noopener')),'External evidence tools open isolated tabs');
+ const caseInput=doc().getElementById('caseQuery'),caseSource=doc().getElementById('caseSource');
+ caseInput.value='TypeError: x & y #42';caseInput.dispatchEvent(new (win().Event)('input',{bubbles:true}));
+ doc().getElementById('caseForm').dispatchEvent(new (win().Event)('submit',{bubbles:true,cancelable:true}));
+ check(win().reviewNavigation==='https://github.com/search?type=issues&q='+encodeURIComponent(caseInput.value),'Error search encodes the complete query for GitHub issues');
+ caseSource.value='stackoverflow';caseSource.dispatchEvent(new (win().Event)('change',{bubbles:true}));
+ doc().getElementById('caseForm').dispatchEvent(new (win().Event)('submit',{bubbles:true,cancelable:true}));
+ check(win().reviewNavigation==='https://www.google.com/search?q='+encodeURIComponent('site:stackoverflow.com '+caseInput.value),'Stack Overflow search is restricted to the selected source');
+ caseSource.value='web';caseSource.dispatchEvent(new (win().Event)('change',{bubbles:true}));
+ doc().getElementById('caseForm').dispatchEvent(new (win().Event)('submit',{bubbles:true,cancelable:true}));
+ check(win().reviewNavigation==='https://www.google.com/search?q='+encodeURIComponent(caseInput.value),'Web investigation searches the supplied error');
+ const previousNavigation=win().reviewNavigation;caseInput.value='   ';
+ doc().getElementById('caseForm').dispatchEvent(new (win().Event)('submit',{bubbles:true,cancelable:true}));
+ check(win().reviewNavigation===previousNavigation,'An empty error does not navigate');
+ caseInput.value='</textarea><img id="unsafe-evidence">';caseInput.dispatchEvent(new (win().Event)('input',{bubbles:true}));pick('links');pick('hub');
+ check(doc().getElementById('caseQuery').value==='</textarea><img id="unsafe-evidence">'&&!doc().getElementById('unsafe-evidence'),'Investigation draft survives navigation as literal text');
+ check(doc().getElementById('caseSource').value==='web','Selected investigation source survives navigation');
+ doc().getElementById('caseQuery').focus();key(doc().getElementById('caseQuery'),'ArrowDown');
+ check(doc().getElementById('gameShell').dataset.scene==='hub','Error editor keeps normal arrow-key behavior');
+ key(doc().getElementById('caseQuery'),'Escape');check(doc().activeElement.dataset.scene==='hub','Escape returns focus from investigation to its command');
+ check(!doc().querySelector('.game-controls,.footer-credit,.search-footnote'),'Decorative hints are removed');
+ check(new Set([...doc().querySelectorAll('.ticker-sequence:first-child>span')].map(el=>el.textContent)).size===4,'Clock scrolls four distinct phrases');
  key(doc().activeElement,'ArrowUp');check(doc().activeElement.dataset.scene==='media','Menu arrows change section and focus');
  key(doc().activeElement,'/');check(doc().activeElement.id==='gameSearchInput','Slash focuses search from another section');
  pick('settings');doc().querySelector('[data-edit]').click();
@@ -82,12 +103,21 @@ document.getElementById('run').onclick=async()=>{
  for(const width of [390,768,1280]){
   scene.style.width=width+'px';scene.style.height=(width<980?1100:720)+'px';await pause(50);
   check(doc().documentElement.scrollWidth<=doc().documentElement.clientWidth+1,`${width}px Search has no horizontal overflow`);
+  pick('hub');await pause(1100);
+  check(doc().documentElement.scrollWidth<=doc().documentElement.clientWidth+1,`${width}px Investigate has no horizontal overflow`);
+  if(width===1280)check(doc().querySelector('.calling-sheet:not(.sheet-exit)').getBoundingClientRect().bottom<doc().querySelector('.game-bottom').getBoundingClientRect().top,'Investigation fits above the footer at 720px');
   pick('links');await pause(450);
   check(doc().documentElement.scrollWidth<=doc().documentElement.clientWidth+1,`${width}px Favorites has no horizontal overflow`);
   if(width===1280)check(doc().documentElement.scrollHeight<=722,'Favorites fits a 720px-high viewport');
   pick('search');await pause(450);
  }
  check(doc().documentElement.scrollHeight<=722,'Desktop composition fits a 720px-high viewport');
+ pick('settings');await pause(1150);
+ check(doc().querySelectorAll('.calling-sheet:not(.sheet-exit) [data-track]').length===4,'Config offers four soundtrack records');
+ const musicSheet=doc().querySelector('.calling-sheet:not(.sheet-exit)').getBoundingClientRect();
+ check(musicSheet.bottom<doc().querySelector('.game-bottom').getBoundingClientRect().top,'Config sheet fits above the footer at 720px');
+ check([...doc().querySelectorAll('.clock-suspension i')].every(el=>el.getBoundingClientRect().top<=0),'Clock supports reach the top edge');
+
  pick('search');await pause(1250);
  const character=doc().querySelector('.menu-character'),commands=doc().querySelector('.game-left');
  const oldCharacter=win().getComputedStyle(character).transform,oldCommands=win().getComputedStyle(commands).transform;
@@ -133,7 +163,7 @@ document.getElementById('run').onclick=async()=>{
  motion.forEach(animation=>animation.finish());
  pick('search');await pause(1250);
  check(doc().querySelector('.sheet-pin').classList.contains('is-pinned')&&doc().querySelector('.sheet-pin img').getAnimations().length===0,'Pin is committed and finished flight effects are released');
- check(doc().getAnimations().length===0,'No animations remain allocated while the menu is idle');
+ check(doc().getAnimations().every(animation=>animation.effect.target.matches('.clock-ticker')),'Only the clock ticker remains animated while the menu is idle');
  check(win().reviewErrors.length===0,'No JavaScript errors');
  }catch(error){checks.push('FAIL '+error.stack);}
  results.textContent=checks.join('\n');

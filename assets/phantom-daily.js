@@ -6,8 +6,43 @@
   const storageKey='phantom-intro-last-date-v1';
   const shortDays=['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
   const skip=document.getElementById('dailySkip');
+  const soundRetry=document.getElementById('dailySoundRetry');
   const preview=new URLSearchParams(location.search).get('intro')==='preview';
   let introTimer,closeTimer;
+  let soundRun=0,soundtrack;
+  function stopSound(){
+    soundRun++;
+    if(soundtrack){soundtrack.pause();soundtrack.currentTime=0;}
+    if(intro.dataset.sound==='playing')intro.dataset.sound='idle';
+  }
+  function playSound(){
+    stopSound();
+    soundRetry.hidden=true;
+    if(document.hidden)return;
+    if(!soundtrack){
+      soundtrack=new Audio('./assets/audio/calendar-transition.ogg');
+      soundtrack.preload='auto';soundtrack.volume=.75;
+      soundtrack.id='dailySoundtrack';soundtrack.hidden=true;
+      intro.append(soundtrack);
+      soundtrack.addEventListener('ended',()=>{intro.dataset.sound='idle';});
+    }
+    const run=soundRun,startedAt=performance.now();
+    // One short track shares the visual timeline: change at .600s, knife
+    // lead-in at 1.760s, its attack at 1.850s. No per-frame audio polling.
+    soundtrack.play().then(()=>{
+      if(run!==soundRun)return;
+      const elapsed=(performance.now()-startedAt)/1000;
+      if(intro.hidden||intro.classList.contains('is-leaving')||document.hidden||elapsed>2.95){stopSound();return;}
+      // Slow initial loading must not shift the impact behind the animation.
+      if(elapsed>.04)soundtrack.currentTime=elapsed;
+      intro.dataset.sound='playing';
+    }).catch(error=>{
+      if(run!==soundRun)return;
+      intro.dataset.sound=error.name==='NotAllowedError'?'blocked':'unavailable';
+      soundRetry.hidden=error.name!=='NotAllowedError';
+    });
+  }
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)stopSound();});
   const background=[...document.body.children].filter(el=>el!==intro && !['SCRIPT','STYLE'].includes(el.tagName));
   const previousInert=new Map();
   // One shared clock: the day settles at 1400ms, flight starts at 1650ms,
@@ -57,6 +92,7 @@
   }
   function closeIntro(){
     clearTimeout(introTimer);
+    stopSound();soundRetry.hidden=true;
     if(intro.hidden || intro.classList.contains('is-leaving'))return;
     intro.classList.add('is-leaving');
     try{localStorage.setItem(storageKey,currentKey)}catch{}
@@ -65,11 +101,13 @@
       document.documentElement.classList.remove('phantom-intro-open');
       for(const [el,wasInert] of previousInert)el.inert=wasInert;
       previousInert.clear();
+      window.PhantomAudio?.setIntroActive(false);
       window.PhantomSelectHub?.();
-      document.getElementById('hubReplay')?.focus({preventScroll:true});
+      document.getElementById('caseQuery')?.focus({preventScroll:true});
     },280);
   }
   function showIntro(){
+    window.PhantomAudio?.setIntroActive(true);
     clearTimeout(introTimer);clearTimeout(closeTimer);
     const today=new Date();currentKey=localKey(today);
     intro.classList.remove('is-running','is-leaving');
@@ -77,69 +115,24 @@
     for(const el of background){if(!previousInert.has(el))previousInert.set(el,el.inert);el.inert=true;}
     void intro.offsetWidth;
     intro.classList.add('is-running');
+    playSound();
     skip.focus({preventScroll:true});
     if(!preview)introTimer=setTimeout(closeIntro,3900);
   }
   skip.addEventListener('click',closeIntro);
+  soundRetry.addEventListener('click',showIntro);
   intro.addEventListener('keydown',event=>{
     event.stopPropagation();
+    if(event.key==='Enter'&&event.target===soundRetry)return;
     if(event.key==='Escape'||event.key==='Enter'){event.preventDefault();closeIntro();}
-    if(event.key==='Tab'){event.preventDefault();skip.focus();}
+    if(event.key==='Tab'){
+      event.preventDefault();
+      (!soundRetry.hidden&&document.activeElement===skip?soundRetry:skip).focus();
+    }
   });
   window.PhantomReplayIntro=showIntro;
   let lastShown='';try{lastShown=localStorage.getItem(storageKey)||''}catch{}
   const forced=['1','preview'].includes(new URLSearchParams(location.search).get('intro'));
   if(forced || lastShown!==localKey(new Date()))showIntro();
 
-  let weatherCache=null,weatherLoading=false;
-  const weatherNames=code=>{
-    if(code===0)return 'Clear sky';
-    if(code<=3)return 'Partly cloudy';
-    if(code<=48)return 'Fog';
-    if(code<=67)return 'Rain';
-    if(code<=77)return 'Snow';
-    if(code<=82)return 'Showers';
-    if(code<=86)return 'Snow showers';
-    if(code>=95)return 'Thunderstorm';
-    return 'Changeable weather';
-  };
-  function showWeather(){
-    const temp=document.getElementById('hubWeather'),desc=document.getElementById('hubWeatherDetails');
-    if(!temp)return;
-    if(weatherCache?.current){
-      temp.textContent=`${Math.round(weatherCache.current.temperature_2m)}°C`;
-      desc.textContent=`${weatherNames(weatherCache.current.weather_code)} · feels ${Math.round(weatherCache.current.apparent_temperature)}°`;
-    }else desc.textContent='Weather unavailable · check connection';
-  }
-  async function fetchWeather(){
-    if(weatherLoading)return;
-    weatherLoading=true;
-    try{
-      const signal=AbortSignal.timeout(6500);
-      const response=await fetch('https://api.open-meteo.com/v1/forecast?latitude=43.2389&longitude=76.8897&current=temperature_2m,apparent_temperature,weather_code&timezone=Asia%2FAlmaty',{signal});
-      if(!response.ok)throw new Error('Weather network response');
-      weatherCache=await response.json();
-      showWeather();
-    }catch{showWeather()}finally{weatherLoading=false;}
-  }
-  function tickHub(){
-    const clock=document.getElementById('hubClock'),date=document.getElementById('hubDate');
-    if(!clock)return;
-    const now=new Date();
-    clock.textContent=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Almaty',hour:'2-digit',minute:'2-digit'}).format(now);
-    date.textContent=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Almaty',weekday:'long',month:'short',day:'numeric'}).format(now).toUpperCase();
-  }
-  window.PhantomInitHub=()=>{
-    tickHub();showWeather();
-    const note=document.getElementById('hubNote');
-    try{note.value=localStorage.getItem('phantom-hub-note-v1')||''}catch{}
-    note.addEventListener('input',()=>{
-      const status=document.getElementById('noteStatus');
-      try{localStorage.setItem('phantom-hub-note-v1',note.value);if(status)status.textContent='SAVED ✓';}
-      catch{if(status)status.textContent='NOT SAVED';}
-    });
-    document.getElementById('hubReplay').addEventListener('click',showIntro);
-    if(!weatherCache)fetchWeather();
-  };
-  setInterval(tickHub,20000);
 })();
