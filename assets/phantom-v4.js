@@ -145,9 +145,9 @@
   document.addEventListener('visibilitychange',()=>{shell.classList.toggle('is-page-hidden',document.hidden);clearTimeout(clockTimer);if(!document.hidden)tick();});
   tick();
   function linkList(mode){
-    const visible=items.filter(item=>validUrl(item.url)&&(mode==='links'||destinationSection(item)===mode)).slice(0,16);
+    const visible=items.filter(item=>validUrl(item.url)&&(mode==='links'||destinationSection(item)===mode));
     if(!visible.length)return '<p class="game-empty">No destinations yet. Add your first site to this section.</p><button class="game-cta" data-edit>ADD A DESTINATION</button>';
-    return '<nav class="game-links" aria-label="Saved destinations">'+visible.map((item,i)=>{
+    return '<nav class="game-links'+(visible.length>6?' is-dense':'')+'" aria-label="Saved destinations">'+visible.map((item,i)=>{
       const href=validUrl(item.url),host=new URL(href).hostname.replace(/^www\./,'');
       return `<a class="game-link" href="${safe(href)}" rel="noopener noreferrer" title="${safe(item.name)} — ${safe(host)}"><b aria-hidden="true">${String(i+1).padStart(2,'0')}</b><span class="link-name">${safe(item.name)}</span><small class="link-host">${safe(host)}</small></a>`;
     }).join('')+'</nav>';
@@ -251,8 +251,14 @@
     if(!document.querySelector('#settingsList input'))document.getElementById('newName').focus();
   }
   function restoreEditor(){shell.inert=false;select(selected);const button=detail.querySelector('[data-edit]');(button||options[selected]).focus({preventScroll:true});editorReturn=null;}
-  document.getElementById('close').addEventListener('click',restoreEditor);
-  document.getElementById('modal').addEventListener('click',event=>{if(event.target.id==='modal')restoreEditor();});
+  document.getElementById('close').addEventListener('click',()=>{if(document.getElementById('modal').hidden)restoreEditor();});
+  document.getElementById('modal').addEventListener('click',event=>{if(event.target.id==='modal'&&event.currentTarget.hidden)restoreEditor();});
+  window.addEventListener('phantom:destinations-changed',()=>{
+    if(editorReturn||!document.getElementById('modal').hidden||!['links','dev','study','media'].includes(sections[selected].id))return;
+    const href=document.activeElement.closest?.('.game-link')?.getAttribute('href');
+    select(selected,{motion:false});
+    if(href)[...detail.querySelectorAll('.game-link')].find(link=>link.getAttribute('href')===href)?.focus({preventScroll:true});
+  });
   document.addEventListener('keydown',event=>{
     if(editorReturn){
       if(event.key==='Escape'){event.preventDefault();restoreEditor();return;}
