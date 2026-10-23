@@ -102,8 +102,8 @@
       for(const [el,wasInert] of previousInert)el.inert=wasInert;
       previousInert.clear();
       window.PhantomAudio?.setIntroActive(false);
-      window.PhantomSelectHub?.();
-      document.getElementById('caseQuery')?.focus({preventScroll:true});
+      window.PhantomSelectStart?.();
+      document.getElementById('gameSearchInput')?.focus({preventScroll:true});
     },280);
   }
   function showIntro(){
